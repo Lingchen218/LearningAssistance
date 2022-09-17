@@ -85,7 +85,9 @@ class choa:
         # 日志消息列表
         self.listxiaox = []
         self.wanglu = iswangluo
-
+        self.time = 60 # 默认验证码倒计时时长
+        self.timezhaohui = 60 # 找回密码验证码时长
+        self.timezhuce = 60 # 注册验证码时长
         # 检测网络是否连通
         self.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'}
         if self.wanglu:
@@ -255,65 +257,28 @@ class choa:
         self.window.withdraw()
         window = Tk()
         window.iconbitmap(self.ifc_file)
-        window.geometry('500x500')  # 窗口大小
+        window.geometry(self.Getsizecoor(500,500))  # 窗口大小
         window.title('超星助手找回密码')  # 窗口的title
         lb1 = Label(window, text="邮箱地址")  # 邮箱
         lb2 = Label(window, text="请输入邮箱验证码")  # 请输入邮箱验证码
         lb3 = Label(window, text="请输入新密码")  # 请输入邮箱验证码
-        inpu1_email = Entry(window)  # 邮箱框
+        self.emailinput = Entry(window)  # 邮箱框
         inpu2_code = Entry(window)  # 验证码框
         inpu3_password = Entry(window,show="*")
         lb1.place(relx=0.15, rely=0.3, relwidth=0.3, relheight=0.05)
         lb2.place(relx=0.1, rely=0.4, relwidth=0.3, relheight=0.05)
         lb3.place(relx=0.1, rely=0.5, relwidth=0.3, relheight=0.05)
-        but_facode = Button(window, text="发送验证码",command=lambda: back())  # 发送验证码
+        self.time = self.timezhaohui
+        self.fasong = Button(window, text="发送验证码",command=lambda: self.captchatcount(window,'/shuakelogo/exmail.php?action=back'))  # 发送验证码
         but_ok = Button(window, text="确认",command=lambda: queren())
-        inpu1_email.place(relx=0.41, rely=0.3, relwidth=0.3, relheight=0.05)
+        self.emailinput.place(relx=0.41, rely=0.3, relwidth=0.3, relheight=0.05)
         inpu2_code.place(relx=0.41, rely=0.4, relwidth=0.3, relheight=0.05)
         inpu3_password.place(relx=0.41, rely=0.5, relwidth=0.3, relheight=0.05)
-        but_facode.place(relx=0.72, rely=0.3, relwidth=0.2, relheight=0.05)
+        self.fasong.place(relx=0.72, rely=0.3, relwidth=0.2, relheight=0.05)
         but_ok.place(relx=0.41, rely=0.6, relwidth=0.3, relheight=0.05)
-        def back():
-            exmai = self.enmail_yanz(inpu1_email.get())
-            if exmai:
-                tkinte = []
-                global isc
-                isc = 60
-                def a():
-                    global isc
 
-                    # lb1.config(state=DISABLED)
-                    but_facode.config( state=DISABLED)
-                    while isc > -1:
-                        window.after(1000)
-                        time.sleep(1)
-                        but_facode.config(text=isc)
-                        window.update()
-                        isc -= 1
-                    but_facode.config(text="发送邮箱验证码", state=NORMAL)  # 发送邮箱验证码
-                def b():
-                    global isc
-                    data = self._jia()
-                    data['email'] = exmai
-                    response = requests.post(data['url'] + '/shuakelogo/exmail.php?action=back', data=data,
-                                             headers=data['headers']).json()
-                    if response['status'] == "1":
-                        isc = 60
-
-                    elif response['status'] == "404":
-                        isc = 0
-                        tkinter.messagebox.showinfo('提示', '邮箱地址不存在')
-                t1 = threading.Thread(target=a)
-                t2 = threading.Thread(target=b)
-                tkinte.append(t1)
-                tkinte.append(t2)
-                for t in tkinte:
-                    t.setDaemon(True)
-                    t.start()
-            else:
-                tkinter.messagebox.showinfo('提示', '邮箱输入错误')
         def queren():
-            exmai = self.enmail_yanz(inpu1_email.get())
+            exmai = self.enmail_yanz(self.emailinput.get())
             if exmai:
                 if len(inpu2_code.get())>5and len(inpu3_password.get())>5:
                     data = self._jia()
@@ -339,10 +304,12 @@ class choa:
             else:
                 tkinter.messagebox.showinfo('提示', '邮箱地址不存在')
         def on_closing():
-            if messagebox.askokcancel("找回密码", "是否退出？"):
-                self.window.deiconify()
-                window.quit()
+            if tkinter.messagebox.askokcancel("找回密码", "是否退出？"):
+
+
                 window.destroy()
+                window.quit()
+                self.window.deiconify()
         window.protocol("WM_DELETE_WINDOW", on_closing) # 关闭窗口事件
         window.mainloop()
     # 账号密码确定
@@ -509,7 +476,7 @@ class choa:
                 print('请输入正确的账号密码')
     # 验证邮箱地址是否正确
     def enmail_yanz(self,email):
-        if re.match("^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$", email.strip())!=None:
+        if re.match("^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$", str(email).strip())!=None:
             return email.strip()
         else:
             return False
@@ -517,7 +484,7 @@ class choa:
     def registredet(self):
         self.window.withdraw()  # 隐藏主程序
         window1 = Tk()
-        window1.after(1, lambda: self.window.focus_force())
+        #window1.after(1, lambda: self.window.focus_force())
         window1.geometry(self.Getsizecoor(500,500))  # 窗口大小
         window1.title('超星助手注册')  # 窗口的title
         window1.iconbitmap(self.ifc_file)
@@ -592,87 +559,9 @@ class choa:
         self.emailinput.place(relx=0.35, rely=0.4, relwidth=0.3, relheight=0.05)  # 邮箱
         inpu5.place(relx=0.35, rely=0.5, relwidth=0.3, relheight=0.05)  # 邮箱验证码
         lb9_gonggao.place(relx=0.15, rely=0.03, relwidth=0.7, relheight=0.05)
-        csdd = 0
-        def code():
-            email = self.enmail_yanz(self.emailinput.get())
-            if email:
-                global isc
-                isc = 60
-                def b():
-                    global isc
-                    data = self._jia()
 
-                    url = data['url'] + '/shuakelogo/exmail.php?action=registrered_email_code'
-                    data['email'] = str(email).strip()
 
-                    respon = requests.post(url, data,headers=data['headers'])
 
-                    try:
-                        resp = respon.json()
-                    except:
-                        isc = 0
-                        print("respon.text",respon.text)
-                        tkinter.messagebox.showinfo('提示', '服务器故障', parent=window1)  # 提示框
-                        return 0
-
-                    try:
-                        if resp['error']:
-                            isc = 0
-
-                            tkinter.messagebox.showinfo('提示', resp['msg'], parent=window1)  # 提示框
-                            if resp['error'] == '255':
-                                self.update()
-                            return 0
-                    except:
-                        pass
-                    if resp['status']=='1':
-                        pass
-
-                    elif resp['status']=='2':
-
-                        isc = 0
-                        tkinter.messagebox.showinfo('提示', '发送邮件失败，请确认邮件地址正确',parent=window1)  # 提示框
-                    elif resp['status']=='3':
-                        isc = 0
-                        tkinter.messagebox.showinfo('提示', '邮箱已经存在，请找回密码',parent=window1)  # 提示框
-                    elif resp['status']=='4':
-                        isc = 0
-                        tkinter.messagebox.showinfo('提示', '邮箱输入有误',parent=window1)  # 提示框
-                    else:
-                        isc = 0
-                        tkinter.messagebox.showinfo('提示', '未知错误',parent=window1)  # 提示框
-                def a():
-                    global isc
-                    while isc>0:
-                        try:
-                            window1.after(1000)
-                            self.fasong.config(text=isc, state=DISABLED)
-                            window1.update()
-                            isc -=1
-                        except:
-                            pass
-                    self.fasong.config(text="发送邮箱验证码", state=NORMAL)  # 发送邮箱验证码
-                    # while isc > 0:
-                    #     window1.after(1000)
-                    #
-                    #     self.fasong.config(text=isc, state=DISABLED)
-                    #     window1.update()
-                    #     isc -= 1
-                    # self.fasong.config(text="发送邮箱验证码", state=NORMAL)  # 发送邮箱验证码
-                threads = []
-                t1 = threading.Thread(target=b)
-                threads.append(t1)
-                t2 = threading.Thread(target=a)
-                threads.append(t2)
-                for t in threads:
-                    t.setDaemon(True)
-                    t.start()
-            else:
-                tkinter.messagebox.showinfo('提示', '邮箱输入错误',parent=window1)
-        def th():
-            t3 = threading.Thread(target=code)
-            t3.setDaemon(True)
-            t3.start()
         def zhuci():
 
             if len(inpu1.get()) > 0 and len(inpu2.get()) > 0 and len(inpu3.get()) and len(self.emailinput.get()) and len(
@@ -725,7 +614,8 @@ class choa:
                 tkinter.messagebox.showinfo('提示', '请输入正确内容',parent=window1)  # 提示框
         self.zhuce1 = Button(window1, text='注册', command=lambda: zhuci())
         self.zhuce1.place(relx=0.35, rely=0.6, relwidth=0.3, relheight=0.05)
-        self.fasong = Button(window1, text='发送邮箱验证码', command=lambda: th())  # 发送邮箱验证码
+        self.time = self.timezhuce # 验证码倒计时时常
+        self.fasong = Button(window1, text='发送邮箱验证码', command=lambda:self.captchatcount(window1,'/shuakelogo/exmail.php?action=registrered_email_code'))  # 发送邮箱验证码
 
         self.fasong.place(relx=0.66, rely=0.4, relwidth=0.2, relheight=0.05)
         def handle_focus(event):
@@ -739,6 +629,67 @@ class choa:
 
         window1.protocol("WM_DELETE_WINDOW", on_closing) # 关闭窗口事件
         window1.mainloop()
+
+    def captchatcount(self,window1,url1):
+        # 单击按钮调用该方法
+
+        after = self.fasong.after(1000, func=lambda:self.captchatcount(window1,url1))
+        # 调用一次时间减一
+        self.fasong['text'] = self.time
+        # 延时1秒在此调用该方法
+        self.time -= 1
+
+        # 将按钮的文本设为倒计时时间
+
+        self.fasong['state'] = 'disable'
+        # 禁用按钮
+        if int(self.fasong['text']) == 60:
+            email = self.enmail_yanz(self.emailinput.get())
+            if email:
+                data = self._jia()
+                url = data['url'] + url1
+                data['email'] = email
+                respon = requests.post(url, data, headers=data['headers'])
+
+                try:
+
+                    resp = respon.json()
+
+                    if resp.get("status",None) == '1':
+                        print('邮件发送成功')
+                    elif resp.get('error',None) == '255':
+                            self.update()
+                            self.time = 1
+                    else:
+                        atext = None
+                        if resp.get("status",None) == '2':
+                            atext =  '发送邮件失败，请确认邮件地址正确'  # 提示框
+                        elif resp.get("status",None) == '3':
+                            atext = '邮箱已经存在，请找回密码'
+                        elif resp.get("status",None) == '4':
+                            atext = '邮箱输入有误'
+                        elif resp.get("status",None) == '404':
+                            atext = '邮箱不存在，请先注册'
+                        elif resp.get('error', None):
+                            atext = resp['msg']
+                        else:
+                            atext = '未知错误'
+                        tkinter.messagebox.showinfo('提示', atext, parent=window1)  # 提示框
+                        self.time = 1
+                except:
+                    tkinter.messagebox.showinfo('提示', '服务器故障', parent=window1)  # 提示框
+            else:
+                self.time = 1
+                tkinter.messagebox.showinfo('提示', '邮箱输入错误', parent=window1)
+        elif self.time == 0:
+            # 倒计时结束
+            self.time = 60
+            # 重置倒计时时间
+            self.fasong['state'] = 'normal'
+            # 启用按钮
+            self.fasong['text'] = '重新发送'
+            # 将按钮文本设为重新发送
+            self.fasong.after_cancel(after)
 
     # 软件超星登录
     def chao(self,user,password,type_int,denglu_anniu,status,TabStrip1__Tab1):  # 登录超星页面点击录按钮触发
