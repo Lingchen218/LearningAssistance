@@ -17,7 +17,7 @@ requests.packages.urllib3.disable_warnings()
 os.environ['NO_PROXY'] = 'thenobleyou.com'  # 设置直接连接 不使用任何代理
 os.environ['NO_PROXY'] = 'chaoxing.com'
 version = '1.2.2'
-
+describe = '本软件支持超星的全部刷课流程 本次更新为9月17日 软件修复若干bug'
 
 def _jia(password, url, version):
     _t = int(time.time() * 1000)
@@ -176,7 +176,7 @@ class choa:
         zhaohui_button = Button(self.window, text="找回密码", command=lambda:self.back() )  # 找回密码按钮
         updata_button = Button(self.window, text="软件更新", command=self.update, )  # 更新按钮
         logo = Label(self.window, text='账号')
-        text_s = Label(self.window, text='本软件支持超星的全部刷课流程 本次更新为1月24日 软件修复若干bug')
+        text_s = Label(self.window, text=describe)
         pass_text = Label(self.window, text='密码')
         self.confirmLabel = Label(self.window)  # 登录时的状态
         user_ = StringVar()
