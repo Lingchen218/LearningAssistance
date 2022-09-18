@@ -85,9 +85,10 @@ class choa:
         # 日志消息列表
         self.listxiaox = []
         self.wanglu = iswangluo
-        self.time = 60 # 默认验证码倒计时时长
-        self.timezhaohui = 60 # 找回密码验证码时长
-        self.timezhuce = 60 # 注册验证码时长
+        self.time = 0 # 当前默认显示
+
+        self.time1 = 0  # 注册验证码时长
+        self.data_json = None
         # 检测网络是否连通
         self.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'}
         if self.wanglu:
@@ -98,6 +99,8 @@ class choa:
                 self.data_json = False
         else:
             self.data_json = False
+        self.timezhaohui = self.data_json.get("Retrievecount",60)  # 找回密码验证码时长
+        self.timezhuce = self.data_json.get("Registercount",60)  # 注册验证码时长
         self.Devicesinfo = DeviceInformation()
         # 获取屏幕分辨率
         self.window = tkinter.Tk()
@@ -269,6 +272,7 @@ class choa:
         lb2.place(relx=0.1, rely=0.4, relwidth=0.3, relheight=0.05)
         lb3.place(relx=0.1, rely=0.5, relwidth=0.3, relheight=0.05)
         self.time = self.timezhaohui
+        self.time1 = self.timezhaohui
         self.fasong = Button(window, text="发送验证码",command=lambda: self.captchatcount(window,'/shuakelogo/exmail.php?action=back'))  # 发送验证码
         but_ok = Button(window, text="确认",command=lambda: queren())
         self.emailinput.place(relx=0.41, rely=0.3, relwidth=0.3, relheight=0.05)
@@ -615,6 +619,7 @@ class choa:
         self.zhuce1 = Button(window1, text='注册', command=lambda: zhuci())
         self.zhuce1.place(relx=0.35, rely=0.6, relwidth=0.3, relheight=0.05)
         self.time = self.timezhuce # 验证码倒计时时常
+        self.time1 = self.timezhuce
         self.fasong = Button(window1, text='发送邮箱验证码', command=lambda:self.captchatcount(window1,'/shuakelogo/exmail.php?action=registrered_email_code'))  # 发送邮箱验证码
 
         self.fasong.place(relx=0.66, rely=0.4, relwidth=0.2, relheight=0.05)
@@ -643,7 +648,7 @@ class choa:
 
         self.fasong['state'] = 'disable'
         # 禁用按钮
-        if int(self.fasong['text']) == 60:
+        if int(self.fasong['text']) == self.time1:
             email = self.enmail_yanz(self.emailinput.get())
             if email:
                 data = self._jia()
@@ -683,7 +688,7 @@ class choa:
                 tkinter.messagebox.showinfo('提示', '邮箱输入错误', parent=window1)
         elif self.time == 0:
             # 倒计时结束
-            self.time = 60
+            self.time = self.time1
             # 重置倒计时时间
             self.fasong['state'] = 'normal'
             # 启用按钮
