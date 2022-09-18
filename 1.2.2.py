@@ -773,7 +773,10 @@ class choa:
 
     # 超星官网登录，手机号登录
     def chaoxing_login(self,user,password,denglu_anniu):
-        logo_url = 'https://passport2.chaoxing.com/fanyalogin'
+
+        busp = BeautifulSoup(requests.get('http://www.chaoxing.com/').text, 'html.parser')
+        url = busp.find('p',{'class':'loginbefore'}).a.get('href')
+        logo_url = 'https://' +re.findall('//(.*?)/',url)[0] + '/fanyalogin'
         header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
         }

@@ -4,7 +4,11 @@ from urllib.parse import quote
 from tkinter import *
 
 def chaoxinglogin(user,password):
-    logo_url = 'https://passport2.chaoxing.com/fanyalogin'
+    busp = BeautifulSoup(requests.get('http://www.chaoxing.com/').text, 'html.parser')
+    url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
+
+    logo_url = 'https://' + re.findall('//(.*?)/', url)[0] + '/fanyalogin'
+
     header = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
     }
@@ -591,7 +595,7 @@ class chaoxing():
                 str__.append(retu)
             return str__
     def exam(self):
-        print("exam()")
+
         # 进入考试需要的url
         # 拿到课程的url 然后进入考试查看有没有考试
         response = requests.get(self.ke_cheng_url, headers=self.headers,allow_redirects=False).headers['Location']
