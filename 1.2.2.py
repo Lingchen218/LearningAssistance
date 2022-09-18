@@ -89,6 +89,7 @@ class choa:
 
         self.time1 = 0  # 注册验证码时长
         self.data_json = None
+        self.windowregret = None
         # 检测网络是否连通
         self.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'}
         if self.wanglu:
@@ -258,23 +259,23 @@ class choa:
     # 找回密码
     def back(self):
         self.window.withdraw()
-        window = Tk()
-        window.iconbitmap(self.ifc_file)
-        window.geometry(self.Getsizecoor(500,500))  # 窗口大小
-        window.title('超星助手找回密码')  # 窗口的title
-        lb1 = Label(window, text="邮箱地址")  # 邮箱
-        lb2 = Label(window, text="请输入邮箱验证码")  # 请输入邮箱验证码
-        lb3 = Label(window, text="请输入新密码")  # 请输入邮箱验证码
-        self.emailinput = Entry(window)  # 邮箱框
-        inpu2_code = Entry(window)  # 验证码框
-        inpu3_password = Entry(window,show="*")
+        self.windowregret = Tk()
+        self.windowregret.iconbitmap(self.ifc_file)
+        self.windowregret.geometry(self.Getsizecoor(500,500))  # 窗口大小
+        self.windowregret.title('超星助手找回密码')  # 窗口的title
+        lb1 = Label(self.windowregret, text="邮箱地址")  # 邮箱
+        lb2 = Label(self.windowregret, text="请输入邮箱验证码")  # 请输入邮箱验证码
+        lb3 = Label(self.windowregret, text="请输入新密码")  # 请输入邮箱验证码
+        self.emailinput = Entry(self.windowregret)  # 邮箱框
+        inpu2_code = Entry(self.windowregret)  # 验证码框
+        inpu3_password = Entry(self.windowregret,show="*")
         lb1.place(relx=0.15, rely=0.3, relwidth=0.3, relheight=0.05)
         lb2.place(relx=0.1, rely=0.4, relwidth=0.3, relheight=0.05)
         lb3.place(relx=0.1, rely=0.5, relwidth=0.3, relheight=0.05)
         self.time = self.timezhaohui
         self.time1 = self.timezhaohui
-        self.fasong = Button(window, text="发送验证码",command=lambda: self.captchatcount(window,'/shuakelogo/exmail.php?action=back'))  # 发送验证码
-        but_ok = Button(window, text="确认",command=lambda: queren())
+        self.fasong = Button(self.windowregret, text="发送验证码",command=lambda: self.captchatcount('/shuakelogo/exmail.php?action=back'))  # 发送验证码
+        but_ok = Button(self.windowregret, text="确认",command=lambda: queren())
         self.emailinput.place(relx=0.41, rely=0.3, relwidth=0.3, relheight=0.05)
         inpu2_code.place(relx=0.41, rely=0.4, relwidth=0.3, relheight=0.05)
         inpu3_password.place(relx=0.41, rely=0.5, relwidth=0.3, relheight=0.05)
@@ -296,7 +297,7 @@ class choa:
                     if response['status']=='1':
                         tkinter.messagebox.showinfo('提示', '修改成功，请使用新密码登录')
                         self.window.deiconify()
-                        window.destroy()
+                        self.windowregret.destroy()
                     elif response['status']=='15':
                         tkinter.messagebox.showinfo('提示', '验证码错误')
                     elif response['status']=='16':
@@ -311,11 +312,11 @@ class choa:
             if tkinter.messagebox.askokcancel("找回密码", "是否退出？"):
 
 
-                window.destroy()
-                window.quit()
+                self.windowregret.destroy()
+                self.windowregret.quit()
                 self.window.deiconify()
-        window.protocol("WM_DELETE_WINDOW", on_closing) # 关闭窗口事件
-        window.mainloop()
+        self.windowregret.protocol("WM_DELETE_WINDOW", on_closing) # 关闭窗口事件
+        self.windowregret.mainloop()
     # 账号密码确定
     def ruanjilogo(self):
         self.logo_button.config(state=DISABLED)
@@ -487,24 +488,24 @@ class choa:
     # 软件注册
     def registredet(self):
         self.window.withdraw()  # 隐藏主程序
-        window1 = Tk()
+        self.windowregret = Tk()
         #window1.after(1, lambda: self.window.focus_force())
-        window1.geometry(self.Getsizecoor(500,500))  # 窗口大小
-        window1.title('超星助手注册')  # 窗口的title
-        window1.iconbitmap(self.ifc_file)
-        lb1 = Label(window1, text="账号")
-        lb1_yz = Label(window1)
-        lb2 = Label(window1, text="密码")
-        lb2_yz = Label(window1)
-        lb3 = Label(window1, text="请确认密码")
-        lb3_yz = Label(window1)
-        lb4 = Label(window1, text="邮箱")  # 邮箱
-        lb4_yz = Label(window1)
-        lb5 = Label(window1, text="账号最少6位数字字母组合")
-        lb6 = Label(window1, text="数字加字母大小写")
-        lb7 = Label(window1, text="数字加字母大小写")
-        lb8 = Label(window1, text="验证码")  # 邮箱验证码
-        lb9_gonggao = Label(window1, text="公告 本软件输入框建议使用英文输入法不然容易乱码")  # 邮箱验证码
+        self.windowregret.geometry(self.Getsizecoor(500,500))  # 窗口大小
+        self.windowregret.title('超星助手注册')  # 窗口的title
+        self.windowregret.iconbitmap(self.ifc_file)
+        lb1 = Label(self.windowregret, text="账号")
+        lb1_yz = Label(self.windowregret)
+        lb2 = Label(self.windowregret, text="密码")
+        lb2_yz = Label(self.windowregret)
+        lb3 = Label(self.windowregret, text="请确认密码")
+        lb3_yz = Label(self.windowregret)
+        lb4 = Label(self.windowregret, text="邮箱")  # 邮箱
+        lb4_yz = Label(self.windowregret)
+        lb5 = Label(self.windowregret, text="账号最少6位数字字母组合")
+        lb6 = Label(self.windowregret, text="数字加字母大小写")
+        lb7 = Label(self.windowregret, text="数字加字母大小写")
+        lb8 = Label(self.windowregret, text="验证码")  # 邮箱验证码
+        lb9_gonggao = Label(self.windowregret, text="公告 本软件输入框建议使用英文输入法不然容易乱码")  # 邮箱验证码
         def inpu1_z():
             if re.match("^[-_a-zA-Z0-9]{4,16}$", str(inpu1.get())) != None:
                 lb1_yz.config(text='')
@@ -513,7 +514,7 @@ class choa:
                 return False
         def inpu1_c():
             lb1_yz.config(text='账号有误')
-        inpu1 = Entry(window1, validate='focusout', validatecommand=inpu1_z, invalidcommand=inpu1_c) # 账号输入框
+        inpu1 = Entry(self.windowregret, validate='focusout', validatecommand=inpu1_z, invalidcommand=inpu1_c) # 账号输入框
         def inpu2_z():
             passregular = self.data_json['passregular']
             if re.match(passregular, inpu2.get()) != None:
@@ -523,7 +524,7 @@ class choa:
                 return True
         def inpu2_c():
             lb2_yz.config(text='密码太弱了')
-        inpu2 = Entry(window1, show="*", validate='focusout', validatecommand=inpu2_z, invalidcommand=inpu2_c) # 密码输入框
+        inpu2 = Entry(self.windowregret, show="*", validate='focusout', validatecommand=inpu2_z, invalidcommand=inpu2_c) # 密码输入框
         def inpu3_z():
             if inpu2.get() == inpu3.get():
                 lb3_yz.config(text="")
@@ -533,7 +534,7 @@ class choa:
                 return False
         def inpu3_c():
             lb3_yz.config(text='密码不一致')
-        inpu3 = Entry(window1, show="*", validate='focusout', validatecommand=inpu3_z, invalidcommand=inpu3_c) # 密码确认框
+        inpu3 = Entry(self.windowregret, show="*", validate='focusout', validatecommand=inpu3_z, invalidcommand=inpu3_c) # 密码确认框
         def inpu4_z():
 
             if re.match(self.data_json['passregular'], self.emailinput.get()) != None:
@@ -543,8 +544,8 @@ class choa:
                 return False
         def inpu4_c():
             lb4_yz.config(text='')  # 邮箱不正确
-        self.emailinput = Entry(window1, validate='focusout', validatecommand=inpu4_z, invalidcommand=inpu4_c) # 邮箱输入框
-        inpu5 = Entry(window1)
+        self.emailinput = Entry(self.windowregret, validate='focusout', validatecommand=inpu4_z, invalidcommand=inpu4_c) # 邮箱输入框
+        inpu5 = Entry(self.windowregret)
         lb1.place(relx=0.21, rely=0.08, relwidth=0.4, relheight=0.1)
         lb1_yz.place(relx=0.04, rely=0.08, relwidth=0.17, relheight=0.1)
         lb2.place(relx=0.21, rely=0.18, relwidth=0.3, relheight=0.1)
@@ -591,54 +592,54 @@ class choa:
                             if resp['error'] == '200':
                                 self.saveuserpass(struser, password)
                                 self.autoinputuserpass()
-                                tkinter.messagebox.showinfo('提示', '注册成功',parent=window1)
+                                tkinter.messagebox.showinfo('提示', '注册成功',parent=self.windowregret)
                                 self.zhuce1.config(state = DISABLED)
                                 self.window.deiconify()  # 显示主窗口
-                                window1.quit()
-                                window1.destroy()  # 把当前的窗口关闭
+                                self.windowregret.quit()
+                                self.windowregret.destroy()  # 把当前的窗口关闭
                                 #更新当前输入框信息
                             elif resp['error'] == '205':
                                 if resp['error1'] == '203':
-                                    tkinter.messagebox.showinfo('提示', '用户名已存在,请重新注册',parent=window1)
+                                    tkinter.messagebox.showinfo('提示', '用户名已存在,请重新注册',parent=self.windowregret)
                             elif resp['error']=='255':
-                                tkinter.messagebox.showinfo('提示', '请更新软件',parent=window1)
+                                tkinter.messagebox.showinfo('提示', '请更新软件',parent=self.windowregret)
                                 self.update()
                             elif resp['error']=='256':
-                                tkinter.messagebox.showinfo('提示', '验证码失效',parent=window1)
+                                tkinter.messagebox.showinfo('提示', '验证码失效',parent=self.windowregret)
                         else:
-                            tkinter.messagebox.showinfo('提示', '密码太弱了',parent=window1)
+                            tkinter.messagebox.showinfo('提示', '密码太弱了',parent=self.windowregret)
                     else:
-                        tkinter.messagebox.showinfo('提示', '两次密码输入有误',parent=window1)
+                        tkinter.messagebox.showinfo('提示', '两次密码输入有误',parent=self.windowregret)
                 else:
-                    tkinter.messagebox.showinfo('提示', '账号输入有误',parent=window1)
+                    tkinter.messagebox.showinfo('提示', '账号输入有误',parent=self.windowregret)
 
 
             else:
 
-                tkinter.messagebox.showinfo('提示', '请输入正确内容',parent=window1)  # 提示框
-        self.zhuce1 = Button(window1, text='注册', command=lambda: zhuci())
+                tkinter.messagebox.showinfo('提示', '请输入正确内容',parent=self.windowregret)  # 提示框
+        self.zhuce1 = Button(self.windowregret, text='注册', command=lambda: zhuci())
         self.zhuce1.place(relx=0.35, rely=0.6, relwidth=0.3, relheight=0.05)
         self.time = self.timezhuce # 验证码倒计时时常
         self.time1 = self.timezhuce
-        self.fasong = Button(window1, text='发送邮箱验证码', command=lambda:self.captchatcount(window1,'/shuakelogo/exmail.php?action=registrered_email_code'))  # 发送邮箱验证码
+        self.fasong = Button(self.windowregret, text='发送邮箱验证码', command=lambda:self.captchatcount('/shuakelogo/exmail.php?action=registrered_email_code'))  # 发送邮箱验证码
 
         self.fasong.place(relx=0.66, rely=0.4, relwidth=0.2, relheight=0.05)
         def handle_focus(event):
             pass  # 准备验证邮箱和账户
-        window1.bind("<FocusIn>", handle_focus)  # 聚焦事件
+        self.windowregret.bind("<FocusIn>", handle_focus)  # 聚焦事件
         def on_closing():
             if messagebox.askokcancel("注册", "是否取消注册"):
                 self.window.deiconify()  # 显示主窗口
-                window1.quit()
-                window1.destroy()  # 把当前的窗口关闭
+                self.windowregret.quit()
+                self.windowregret.destroy()  # 把当前的窗口关闭
 
-        window1.protocol("WM_DELETE_WINDOW", on_closing) # 关闭窗口事件
-        window1.mainloop()
+        self.windowregret.protocol("WM_DELETE_WINDOW", on_closing) # 关闭窗口事件
+        self.windowregret.mainloop()
 
-    def captchatcount(self,window1,url1):
+    def captchatcount(self,url1):
         # 单击按钮调用该方法
 
-        after = self.fasong.after(1000, func=lambda:self.captchatcount(window1,url1))
+        after = self.fasong.after(1000, func=lambda:self.captchatcount(url1))
         # 调用一次时间减一
         self.fasong['text'] = self.time
         # 延时1秒在此调用该方法
@@ -679,13 +680,13 @@ class choa:
                             atext = resp['msg']
                         else:
                             atext = '未知错误'
-                        tkinter.messagebox.showinfo('提示', atext, parent=window1)  # 提示框
+                        tkinter.messagebox.showinfo('提示', atext, parent=self.windowregret)  # 提示框
                         self.time = 1
                 except:
-                    tkinter.messagebox.showinfo('提示', '服务器故障', parent=window1)  # 提示框
+                    tkinter.messagebox.showinfo('提示', '服务器故障', parent=self.windowregret)  # 提示框
             else:
                 self.time = 1
-                tkinter.messagebox.showinfo('提示', '邮箱输入错误', parent=window1)
+                tkinter.messagebox.showinfo('提示', '邮箱输入错误', parent=self.windowregret)
         elif self.time == 0:
             # 倒计时结束
             self.time = self.time1
