@@ -137,24 +137,22 @@ class choa:
             tkinter.messagebox.showinfo('欢迎使用', '欢迎使用本软件'+self.data_json['announcement'],parent=self.window) # 提示框
     # 主函数
     def main(self):
-        thr = []
-        t1 = threading.Thread(target=self.ico_)
-        thr.append(t1)
-        t2 = threading.Thread(target=self.shouyetishi)
-        thr.append(t2)
-        for t in thr:
-            t.setDaemon(True)
-            t.start()
+
+
+
+        self.th((self.shouyetishi,self.ico_,))
 
         sleep(0.5)
         self.window.title('超星刷课助手')
         self.window.geometry(self.Getsizecoor(800,600))  # 窗口大小
 
+        menu_options = (('等待开发', None, self.switch_icon), ('大家好', None, (('io', None, self.switch_icon),)))
+        self.sysTrayIcon = SysTrayIcon(self.ifc_file, '超星刷课', menu_options, default_menu_index=1,
+                                       objmain=self.window, OnWinShow=self.OnwinShow, on_quit=self.exit)
 
-        # if self.window.state()=="iconic"else False
         self.window.bind("<Unmap>", lambda event:self.Unmap() if self.window.state()=="iconic" else False )
         self.window.protocol('WM_DELETE_WINDOW', self.exit)  # 右上角的关闭事件
-        self.logo_button = Button(self.window, text="登录",command=lambda: self.th(1))  # 登录按钮
+        self.logo_button = Button(self.window, text="登录",command=lambda: self.th((self.ruanjilogo,)))  # 登录按钮
         zhuci_button = Button(self.window, text="注册", command=lambda:self.registredet() )  # 注册按钮
         zhaohui_button = Button(self.window, text="找回密码", command=lambda:self.back() )  # 找回密码按钮
         updata_button = Button(self.window, text="软件更新", command=self.update, )  # 更新按钮
@@ -268,9 +266,9 @@ class choa:
                     data['captcha'] = inpu2_code.get()
                     data['password'] = self._jia(inpu3_password.get())['password4']
                     data['exmail'] = exmai
-                    print(data['url'])
+
                     response1 = requests.post(data['url'] + '/shuakelogo/exmail.php?action=back', data=data,headers=data['headers'])
-                    print(response1.text)
+
                     response = response1.json()
                     if response['status']=='1':
                         tkinter.messagebox.showinfo('提示', '修改成功，请使用新密码登录')
@@ -388,21 +386,11 @@ class choa:
                 tkinter.messagebox.showinfo('提示', '未知错误请联系客服')  # 提示框
 
     # 多线程
-    def th(self,a=None):
-        if a==1:# 登录
-            t1 = threading.Thread(target=self.ruanjilogo)
-            #t1.setDaemon(True)
+    def th(self,funcs = None):
+        for func in funcs:
+            t1 = threading.Thread(target=func)
+            t1.setDaemon(True)
             t1.start()
-        elif a==2:# 注册
-            self.t2 = threading.Thread(target=self.chao).start()
-        elif a==3:  # 注册
-            self.t2 = threading.Thread(target=self.back).start()
-        elif a==4:# 注册
-            self.t2 = threading.Thread(target=self.registredet)
-        elif a==5:# 注册
-            self.t2 = threading.Thread(target=self.registredet).start()
-        elif a==6:# 注册
-            self.t2 = threading.Thread(target=self.registredet).start()
 
     # 保存用户密码
     def saveuserpass(self,user,password):
@@ -416,12 +404,11 @@ class choa:
     def suss_(self):
         global a_diengyi
         a_diengyi = 1
-        t1 = threading.Thread(target=self.monitor)  # 监控在线状态
-        t1.setDaemon(True)
-        t1.start()
+        self.th((self.monitor,))  # 监控在线状态
         self.top77 = self.window.winfo_toplevel()
         self.style = Style()
         self.TabStrip1 = Notebook(self.top77)
+
         self.TabStrip1.place(relx=0, rely=0, relwidth=1, relheight=1)
         def b(user_text,password_text,title_text,type_int):
 
@@ -628,43 +615,46 @@ class choa:
         self.fasong['state'] = 'disable'
         # 禁用按钮
         if int(self.fasong['text']) == self.time1:
-            email = self.enmail_yanz(self.emailinput.get())
-            if email:
-                data = self._jia()
-                url = data['url'] + url1
-                data['email'] = email
-                respon = requests.post(url, data, headers=data['headers'])
+            def emailsendcode():
+                email = self.enmail_yanz(self.emailinput.get())
+                if email:
+                    data = self._jia()
+                    url = data['url'] + url1
+                    data['email'] = email
+                    respon = requests.post(url, data, headers=data['headers'])
 
-                try:
+                    try:
 
-                    resp = respon.json()
+                        resp = respon.json()
 
-                    if resp.get("status",None) == '1':
-                        print('邮件发送成功')
-                    elif resp.get('error',None) == '255':
-                            self.update()
-                            self.time = 1
-                    else:
-                        atext = None
-                        if resp.get("status",None) == '2':
-                            atext =  '发送邮件失败，请确认邮件地址正确'  # 提示框
-                        elif resp.get("status",None) == '3':
-                            atext = '邮箱已经存在，请找回密码'
-                        elif resp.get("status",None) == '4':
-                            atext = '邮箱输入有误'
-                        elif resp.get("status",None) == '404':
-                            atext = '邮箱不存在，请先注册'
-                        elif resp.get('error', None):
-                            atext = resp['msg']
+                        if resp.get("status",None) == '1':
+                            print('邮件发送成功')
+                        elif resp.get('error',None) == '255':
+                                self.update()
+                                self.time = 1
                         else:
-                            atext = '未知错误'
-                        tkinter.messagebox.showinfo('提示', atext, parent=self.windowregret)  # 提示框
-                        self.time = 1
-                except:
-                    tkinter.messagebox.showinfo('提示', '服务器故障', parent=self.windowregret)  # 提示框
-            else:
-                self.time = 1
-                tkinter.messagebox.showinfo('提示', '邮箱输入错误', parent=self.windowregret)
+                            atext = None
+                            if resp.get("status",None) == '2':
+                                atext =  '发送邮件失败，请确认邮件地址正确'  # 提示框
+                            elif resp.get("status",None) == '3':
+                                atext = '邮箱已经存在，请找回密码'
+                            elif resp.get("status",None) == '4':
+                                atext = '邮箱输入有误'
+                            elif resp.get("status",None) == '404':
+                                atext = '邮箱不存在，请先注册'
+                            elif resp.get('error', None):
+                                atext = resp['msg']
+                            else:
+                                atext = '未知错误'
+                            tkinter.messagebox.showinfo('提示', atext, parent=self.windowregret)  # 提示框
+                            self.time = 1
+                    except:
+                        tkinter.messagebox.showinfo('提示', '服务器故障', parent=self.windowregret)  # 提示框
+                else:
+                    self.time = 1
+                    tkinter.messagebox.showinfo('提示', '邮箱输入错误', parent=self.windowregret)
+
+            self.th((emailsendcode,))
         elif self.time == 0:
             # 倒计时结束
             self.time = self.time1
@@ -838,12 +828,12 @@ class choa:
 
         if not self.sysTrayIcon.Isminmize:
 
-            print("显示")
+            # print("显示")
             self.listxiaox.append(msgstr)
             self.OnwinShow()
         else:
             self.listxiaox.append(msgstr)
-            print("隐藏")
+            print("最小化到后台了隐藏")
             return None
     def OnwinShow(self,lparam=None):
 
@@ -853,10 +843,6 @@ class choa:
             self.msgbox.insert(END, xiaox + '\n')
             self.msgbox.see(END)
         del self.listxiaox[:]
-
-
-
-
     # 软件的设置
     def settings_sa(self,event):
         aca = event.widget['text']
@@ -917,15 +903,6 @@ class choa:
 
     # 最小化需要的方法
     def Unmap(self):
-
-
-
-        menu_options = (('等待开发', None, self.switch_icon), ('大家好', None, (('io', None, self.switch_icon),)))
-
-        if not self.sysTrayIcon:
-            self.sysTrayIcon = SysTrayIcon(self.ifc_file, '超星刷课', menu_options, default_menu_index=1,
-                                           objmain=self.window, OnWinShow=self.OnwinShow,on_quit=self.exit)
-
         self.sysTrayIcon.Isminmize = True  # 最小化为真
         self.window.withdraw()
         self.sysTrayIcon.show_icon()
@@ -933,7 +910,7 @@ class choa:
 
     # 开始刷课
     def shuake(self,TabStrip1__Tab1,speed_):
-        # print(int(speed_.get().strip()))
+
         self.speed_ = speed_
         self.start_.config(text='正在初始化请稍等...',state=DISABLED)
         name = self.comboxlist.get()  # 课程名称
@@ -985,7 +962,7 @@ class choa:
                         self.speed_.config(state=NORMAL)
                         return True
                     elif a=="":
-                        print("1038行")
+                        print("977行")
 
                     if not self.sysTrayIcon.Isminmize:
                         self.bofzhuangt_['text'] = "已经开始刷课了"
@@ -1019,7 +996,7 @@ class choa:
                     t.setDaemon(True)
                     t.start()
             except Exception as f:
-                print("有错误")
+                print("有错误1011")
                 TabStrip1__Tab1.after(1000)
                 self.bofzhuangt_.config(text='连接服务失败')
                 TabStrip1__Tab1.update()
@@ -1068,7 +1045,7 @@ class choa:
                     data['username']=str(self.username)  # 把用户名添加到发送里面
                     try:
                         responsejson = requests.post(data['url']+'/shuake_urser_logo.php?action=Online',headers=data['headers'],data=data,timeout=20).json()
-                        print(responsejson)
+
                         if responsejson['status'] == '404':
                             tkinter.messagebox.showinfo('提示', '用户不存在', parent=self.TabStrip1)  # 提示框
                             self.exitc()
