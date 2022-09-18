@@ -13,36 +13,12 @@ import tkinter as tk
 from SysTrayIcon import *
 from tkinter.ttk import *
 from chaoxing import chaoxing
-requests.packages.urllib3.disable_warnings()
+
 os.environ['NO_PROXY'] = 'thenobleyou.com'  # 设置直接连接 不使用任何代理
 os.environ['NO_PROXY'] = 'chaoxing.com'
 version = '1.2.2'
 describe = '本软件支持超星的全部刷课流程 本次更新为9月17日 软件修复若干bug'
 
-def _jia(password, url, version):
-    _t = int(time.time() * 1000)
-
-    updata_url = url  # 更新地址
-    mdd = (str(_t + self.data_json['QQ']) + 'qq').encode()
-    cookies = hashlib.md5(mdd).hexdigest()
-
-    passwords = (password + self.data_json['keysalt']).encode()
-    data = {
-        'time': _t,
-        'cookies': cookies,
-        'version': version,
-        'updata_url': updata_url,
-        'url': url,
-        'version_': version == "1.2.0",
-        'password4': hashlib.md5(passwords).hexdigest(),
-        'headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36',
-            'Cookie': cookies + '_' + str(_t),
-            'referer': self.data_json['url']
-        }
-
-    }
-    return data
 
 class zhihuishu():
     def __init__(self,cookie):
@@ -91,6 +67,8 @@ class choa:
         self.data_json = None
         self.windowregret = None
         # 检测网络是否连通
+        self.sysTrayIcon = None
+
         self.headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'}
         if self.wanglu:
             try:
@@ -167,12 +145,11 @@ class choa:
         for t in thr:
             t.setDaemon(True)
             t.start()
-            pass
+
         sleep(0.5)
         self.window.title('超星刷课助手')
         self.window.geometry(self.Getsizecoor(800,600))  # 窗口大小
-        menu_options = (('等待开发', None, self.switch_icon),('大家好', None, (('io', None, self.switch_icon),)))
-        self.sysTrayIcon = SysTrayIcon(self.ifc_file,'超星刷课',menu_options, default_menu_index = 1,objmain=self.window,OnWinShow=self.OnwinShow)
+
 
         # if self.window.state()=="iconic"else False
         self.window.bind("<Unmap>", lambda event:self.Unmap() if self.window.state()=="iconic" else False )
@@ -204,6 +181,7 @@ class choa:
 
 
         self.window.mainloop()
+
 
     # 输入自动输入账号密码
     def autoinputuserpass(self):
@@ -940,10 +918,18 @@ class choa:
     # 最小化需要的方法
     def Unmap(self):
 
-        self.sysTrayIcon.Isminmize = True # 最小化为真
+
+
+        menu_options = (('等待开发', None, self.switch_icon), ('大家好', None, (('io', None, self.switch_icon),)))
+
+        if not self.sysTrayIcon:
+            self.sysTrayIcon = SysTrayIcon(self.ifc_file, '超星刷课', menu_options, default_menu_index=1,
+                                           objmain=self.window, OnWinShow=self.OnwinShow,on_quit=self.exit)
+
+        self.sysTrayIcon.Isminmize = True  # 最小化为真
         self.window.withdraw()
         self.sysTrayIcon.show_icon()
-
+        # self.sysTrayIcon.activation()
 
     # 开始刷课
     def shuake(self,TabStrip1__Tab1,speed_):
