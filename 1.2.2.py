@@ -746,8 +746,12 @@ class choa:
 
     # 超星官网登录，手机号登录
     def chaoxing_login(self,user,password,denglu_anniu):
-
-        busp = BeautifulSoup(requests.get('http://www.chaoxing.com/').text, 'html.parser')
+        busp = None
+        try:
+            busp = BeautifulSoup(requests.get('http://www.chaoxing.com/',timeout=5).text, 'html.parser')
+        except Exception as e:
+            tkinter.messagebox.showinfo('网络故障', e, parent=self.window)
+            print("网络出现故障",e)
         url = busp.find('p',{'class':'loginbefore'}).a.get('href')
         logo_url = 'https://' +re.findall('//(.*?)/',url)[0] + '/fanyalogin'
         header = {
