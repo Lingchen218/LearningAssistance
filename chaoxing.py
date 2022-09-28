@@ -1,13 +1,25 @@
+import asyncio
+
 import requests,re,json,hashlib,time,base64
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from tkinter import *
+import js2py
+version = '1.2.2'
+headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'}
 
 def chaoxinglogin(user,password):
     busp = BeautifulSoup(requests.get('http://www.chaoxing.com/').text, 'html.parser')
     url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
-
     logo_url = 'https://' + re.findall('//(.*?)/', url)[0] + '/fanyalogin'
+    header = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
+    }
+
+    content = js2py.EvalJs()
+    content.execute(open('js/chaoxinglogin.js', 'r', encoding='utf-8').read())
+
+
 
     header = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
@@ -15,24 +27,29 @@ def chaoxinglogin(user,password):
     data = {
         'fid': '-1',
         'uname': str(user),
-        'password': base64.b64encode(str(password).encode()).decode(),
+        'password': content.encryptByDES(password, "u2oh6Vu^HWe40fj"),
         't': 'true'
     }
     try:
         cookies = requests.post(logo_url, headers=header, data=data,timeout=10)
+
         _uid = '_uid='+re.findall('_uid=(.*?);',cookies.headers['Set-Cookie'])[0]+';'
         _d = '_d='+ re.findall('_d=(.*?);',cookies.headers['Set-Cookie'])[0]+';'
         vc3 = 'vc3='+ re.findall('vc3=(.*?);',cookies.headers['Set-Cookie'])[0]+';'
         UID = 'UID=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
         if cookies.json()['status']:
+            print('登录失败')
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
                 'Cookie': _uid +_d+vc3+UID
             }
+
             return headers
         else:
+            print('登录失败')
             return False
     except:
+        print('登录失败')
         pass
 class chaoxing():
     def __init__(self, headers: dict,bofzhuangt_=None,**kwargs):
@@ -50,24 +67,38 @@ class chaoxing():
     def __int__(self):
         pass
     def huoqukecheng(self):
-        indexs_url = 'https://mooc2-ans.chaoxing.com/visit/courses/list'
+
+        indexs_url = 'https://i.chaoxing.com/base'
         try:
-            html = requests.get(indexs_url, headers=self.headers).text
+
+
+            busp = BeautifulSoup(requests.get(indexs_url, headers=self.headers).text,'html.parser')
+
+            url = busp.find('li',{'name':'课程'}).get('dataurl')
+
+            response = requests.get(url,headers=self.headers)
+
         except:
-            return  "解析课程失败"
+            print('课程获取失败')
+            return  {}
             # tkinter.messagebox.showinfo('提示', '网络连接超时')  # 提示框
-        busu = BeautifulSoup(html, 'html.parser').findAll('li',{'class':"course clearfix catalog_0 learnCourse"})
+        busu = BeautifulSoup(response.text, 'html.parser').findAll('li',{'class':"courseItem curFile"})
+
         kec = {}
         for i, ii in zip(busu, range(0, len(busu))):
-            url = re.sub('amp;', '', i.find('div').a.get('href'))
-            kec[ii] = {i.find('div',{'class':'course-info'}).h3.a.span.text.strip():url.strip()}
+            # print(i.find('div',{'class':'Mconright httpsClass'}).h3.a.get("title"))
+            url = re.sub('amp;', '', 'https://' + re.findall('//(.*?)/',url)[0] + i.find('div').a.get('href'))
+
+            kec[ii] = {i.find('div',{'class':'Mconright httpsClass'}).h3.a.get("title"):url.strip()}
         return kec
     def huoquzhangjie(self,ke_cheng_url,msgbox):
 
         self.msgbox = msgbox
         self.ke_cheng_url = ke_cheng_url
-        url = requests.get(ke_cheng_url, headers=self.headers,allow_redirects=False).headers['Location']
-        reg = 'courseid=(.*?)&'
+
+        url = requests.get(ke_cheng_url, headers=self.headers,allow_redirects=False).headers.get('Location',None)
+        url if url else print("没有找到返回地址")
+        reg = 'courseId=(.*?)&'
         courseid = re.findall(reg,url)[0]
         reg = 'clazzid=(.*?)&'
         clazzid = re.findall(reg,url)[0]
@@ -84,6 +115,7 @@ class chaoxing():
         enc = re.findall(reg,html.text)[0]
         sudu = BeautifulSoup(html.text, 'html.parser').findAll('span', {'class': 'catalog_points_yi'})
         fe = {}
+        urllist = []
         if len(sudu) > 0:
             for i, ii in zip(sudu, range(0, len(sudu))):  # 循环有多少没有任务点没有完成
                 a_ = i.parent.parent.parent
@@ -102,114 +134,133 @@ class chaoxing():
                 url = quote(url,'utf-8')
                 url = 'https://'+self.host_url + '/mycourse/transfer?moocId=' + str(courseid) + '&clazzid=' + str(clazzid) + '&ut=s&refer=' + url
                 '''https://mooc1.chaoxing.com/mycourse/transfer?moocId=205404001&clazzid=10849188&ut=s&refer=https%3A%2F%2Fmooc1.chaoxing.com%2Fmycourse%2Fstudentstudy%3FchapterId%3D427668059%26courseId%3D205404001%26clazzid%3D10849188%26enc%3D3fcef08a61d7c2129cc0027b6c20d5e6%26mooc2%3D1'''
-                reg = 'https://fystat-ans.chaoxing.com/log/setlog\?personid=(.*?)&'
+
                 url_dtoken = url
-                html_bof = requests.get(url_dtoken, headers=self.headers,allow_redirects=False).headers['Location']  # 进入播放页面
-                html_bof = requests.get(html_bof, headers=self.headers).text
+                urllist.append([url_dtoken,courseid,clazzid])
 
-                dtoken_ = re.findall(reg, html_bof)[0]  # 取得视频播放需要的参数
-                reg = 'utEnc="(.*?)"'
-                utEnc = re.findall(reg, html_bof)[0]  # 自动答题需要
-                reg = 'chapterId=(.*?)&courseId=(.*?)&clazzid=(.*?)&'
-                #knowledgeid, courseId, clazzid = re.findall(reg, str_usr)[0]  # 返回播放视频需要的参数
-                knowledgeid = knowledgeId
-                courseId = courseid
-                clazzid = clazzid
-                url = 'https://'+self.host_url+'/knowledge/cards'  # 播放视频的url
-                fq = {}
-                for num in range(0, 5):  # 每个课程的探测深度
-                    data_url = {
-                        'clazzid': clazzid,
-                        'courseid': courseId,
-                        'knowledgeid': knowledgeid,
-                        'num': num,
-                    }
-                    html = requests.get(url, data_url, headers=self.headers).text
-                    reg = 'mArg = ([{][\s\S.]*?);'
-                    mArg = re.findall(reg, html)
-                    # print(mArg[0])
-                    if len(mArg)==1:
-                        mArg = json.loads(mArg[0])
-                    if "attachments" in mArg:  # 如果有就说明有课程
-                        for attachments,j in zip(mArg['attachments'],range(len(mArg['attachments']))):  # 循环一个章节有多少课程
-                            if 'type' in attachments:
-                                type = attachments['type']  # 类型
-                                if type == 'video':  # 视频
-                                    if 'job' in attachments:  # 视频没有播放
-                                        jobid = attachments['jobid']  # 播放视频需要的
-                                        otherInfo = attachments['otherInfo']
-                                        objectid = attachments['property']['objectid']
-                                        urls = 'https://'+self.host_url+'/ananas/status/' + objectid
-
-                                        params = {
-                                            '_dc':str(int(time.time()*1000)),
-                                            'flag':'normal',
-                                           # 'k':'29619' # 学习ID 暂时用不上
-                                        }
-
-                                        self.headers['Referer'] = 'https://' + self.host_url
-                                        req = requests.get(urls,params=params, headers=self.headers, timeout=10).json()
-
-                                        uid = re.findall('_uid=(.*?);', self.headers['Cookie'])[0]
-                                        ship_ = {}
-                                        daand = {}
-                                        daand[j] = {'clazzid': clazzid,
-                                                    'jobid': jobid,
-                                                    'objectid': objectid,
-                                                    'duration': req['duration'],
-                                                    'otherInfo': otherInfo,
-                                                    'dtoken': dtoken_ + '/' + req['dtoken'],
-                                                    'uid': uid,
-                                                    'name': name, }
-                                        ship_['video'] = daand
-                                        fe[ii] = fq[j] = ship_
-                                elif type == 'workid':  # 答题
-                                    if 'job' in attachments:
-                                        knowledgeid = mArg['defaults']['knowledgeid']  # 答题需要的
-                                        courseid = mArg['defaults']['courseid']  # 答题需要的
-                                        clazzId = mArg['defaults']['clazzId']  # 答题需要的
-                                        enc = attachments['enc']  # 答题需要的
-                                        jobid_dati = attachments['jobid']  # 答题需要的
-
-                                        workId = attachments['property']['workid']  # 答题需要的
-                                        cpi = mArg['defaults']['cpi']
-                                        ktoken = mArg['defaults']['ktoken']
-                                        title = attachments['property']['title']  # 答题的标题
-                                        dati = {}
-                                        dati['workid'] = {
-                                            'knowledgeid': knowledgeid,
-                                            'courseid': courseid,
-                                            'clazzId': clazzId,
-                                            'enc': enc,
-                                            'jobid_dati': jobid_dati,
-                                            'workId': workId,
-                                            'utEnc': utEnc,
-                                            'cpi':cpi,
-                                            'ktoken':ktoken,
-                                            'title':title
-                                        }
-                                        fe[ii] = fq[j] = dati
-                                    else:
-                                        pass  # 可以尝试收集答案
-                                elif type == 'document':  # 阅读pdf
-                                    if 'job' in attachments:
-                                        url = 'https://mooc1-1.chaoxing.com/ananas/job/document'
-                                        data = {
-                                            'jobid' : attachments['jobid'],
-                                            'knowledgeid' : mArg['defaults']['knowledgeid'],
-                                            'courseid' : mArg['defaults']['courseid'],
-                                            'clazzid' : mArg['defaults']['clazzId'],
-                                            'jtoken' : attachments['jtoken'],
-                                            '_dc' : int(time.time() * 1000)
-                                        }
-                                        respon = requests.get(url,params=data, headers=self.headers, allow_redirects=False).url
-                            else:
-                                break
-                    else:
-                        break
-            return fe
         else:
             return "当前课程已经完成"
+
+        async def a(url_dtoken,courseid,clazzid):
+            loop = asyncio.get_event_loop()
+            import functools
+            callFunc = functools.partial(requests.get, url=url_dtoken,headers=self.headers, allow_redirects=False)
+            futurn = loop.run_in_executor(None,callFunc)
+            reg = 'https://fystat-ans.chaoxing.com/log/setlog\?personid=(.*?)&'
+            response = await futurn
+            html_bof = response.headers['Location']  # 进入播放页面
+
+            html_bof = requests.get(html_bof, headers=self.headers).text
+
+            dtoken_ = re.findall(reg, html_bof)[0] if len(re.findall(reg, html_bof)) > 0 else print("获取失败，请检查代码")  # 取得视频播放需要的参数
+            reg = 'utEnc="(.*?)"'
+            utEnc = re.findall(reg, html_bof)[0]  # 自动答题需要
+            reg = 'chapterId=(.*?)&courseId=(.*?)&clazzid=(.*?)&'
+            # knowledgeid, courseId, clazzid = re.findall(reg, str_usr)[0]  # 返回播放视频需要的参数
+            knowledgeid = knowledgeId
+            courseId = courseid
+            clazzid = clazzid
+            url = 'https://' + self.host_url + '/knowledge/cards'  # 播放视频的url
+            fq = {}
+            for num in range(0, 5):  # 每个课程的探测深度
+                data_url = {
+                    'clazzid': clazzid,
+                    'courseid': courseId,
+                    'knowledgeid': knowledgeid,
+                    'num': num,
+                }
+                html = requests.get(url, data_url, headers=self.headers).text
+                reg = 'mArg = ([{][\s\S.]*?);'
+                mArg = re.findall(reg, html)
+                # print(mArg[0])
+                if len(mArg) == 1:
+                    mArg = json.loads(mArg[0])
+                if "attachments" in mArg:  # 如果有就说明有课程
+                    for attachments, j in zip(mArg['attachments'], range(len(mArg['attachments']))):  # 循环一个章节有多少课程
+                        if 'type' in attachments:
+                            type = attachments['type']  # 类型
+                            if type == 'video':  # 视频
+                                if 'job' in attachments:  # 视频没有播放
+                                    jobid = attachments['jobid']  # 播放视频需要的
+                                    otherInfo = attachments['otherInfo']
+                                    objectid = attachments['property']['objectid']
+                                    urls = 'https://' + self.host_url + '/ananas/status/' + objectid
+
+                                    params = {
+                                        '_dc': str(int(time.time() * 1000)),
+                                        'flag': 'normal',
+                                        # 'k':'29619' # 学习ID 暂时用不上
+                                    }
+
+                                    self.headers['Referer'] = 'https://' + self.host_url
+                                    req = requests.get(urls, params=params, headers=self.headers, timeout=10).json()
+
+                                    uid = re.findall('_uid=(.*?);', self.headers['Cookie'])[0]
+                                    ship_ = {}
+                                    daand = {}
+                                    daand[j] = {'clazzid': clazzid,
+                                                'jobid': jobid,
+                                                'objectid': objectid,
+                                                'duration': req['duration'],
+                                                'otherInfo': otherInfo,
+                                                'dtoken': dtoken_ + '/' + req['dtoken'],
+                                                'uid': uid,
+                                                'name': name, }
+                                    ship_['video'] = daand
+                                    fe[ii] = fq[j] = ship_
+                            elif type == 'workid':  # 答题
+                                if 'job' in attachments:
+                                    knowledgeid = mArg['defaults']['knowledgeid']  # 答题需要的
+                                    courseid = mArg['defaults']['courseid']  # 答题需要的
+                                    clazzId = mArg['defaults']['clazzId']  # 答题需要的
+                                    enc = attachments['enc']  # 答题需要的
+                                    jobid_dati = attachments['jobid']  # 答题需要的
+
+                                    workId = attachments['property']['workid']  # 答题需要的
+                                    cpi = mArg['defaults']['cpi']
+                                    ktoken = mArg['defaults']['ktoken']
+                                    title = attachments['property']['title']  # 答题的标题
+                                    dati = {}
+                                    dati['workid'] = {
+                                        'knowledgeid': knowledgeid,
+                                        'courseid': courseid,
+                                        'clazzId': clazzId,
+                                        'enc': enc,
+                                        'jobid_dati': jobid_dati,
+                                        'workId': workId,
+                                        'utEnc': utEnc,
+                                        'cpi': cpi,
+                                        'ktoken': ktoken,
+                                        'title': title
+                                    }
+                                    fe[ii] = fq[j] = dati
+                                else:
+                                    pass  # 可以尝试收集答案
+                            elif type == 'document':  # 阅读pdf
+                                if 'job' in attachments:
+                                    url = 'https://mooc1-1.chaoxing.com/ananas/job/document'
+                                    data = {
+                                        'jobid': attachments['jobid'],
+                                        'knowledgeid': mArg['defaults']['knowledgeid'],
+                                        'courseid': mArg['defaults']['courseid'],
+                                        'clazzid': mArg['defaults']['clazzId'],
+                                        'jtoken': attachments['jtoken'],
+                                        '_dc': int(time.time() * 1000)
+                                    }
+                                    respon = requests.get(url, params=data, headers=self.headers,
+                                                          allow_redirects=False).url
+                        else:
+                            break
+                else:
+                    break
+
+
+        task = [a(url[0],url[1],url[2]) for url in urllist]
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(asyncio.wait(task))
+        return fe
     def goo_post(self, bofang, clazzId, userid, jobid, objectid, duration_, dtoken, otherInfo, name):
         print('正在播放', name+" ",bofang, )
         self.msgbox('正在播放: '+  name+" 已观看" + str(bofang) + "秒 每隔60刷新一次，到完成时可能会重复几次")
@@ -679,16 +730,16 @@ class chaoxing():
 if __name__=="__main__":
     headers = chaoxinglogin('手机号','密码')
     # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36', 'Cookie': '_uid=111016516;_d=1602406088870;vc3=S5M7HcCaSFEKGjtzkbAVhwCxEvqzbrxF%2FyPiKtWVRR2UqrKjIzSyk5Nr0EqMA1yVA0YxJf3YLB0KLTcQayCv%2BtRUk5fqUKINYZqx8vvUkfrJY7Jca9sOge%2Bf1muiQqLm%2BrJ250vIXgnatqsp28JyMO18wYSEW%2BFuIOIU8RuElNk%3D8e1004da4a3cb00e069ec12907ff2fec;UID=111016516;'}
-    #ke_cheng_url = "https://mooc1-1.chaoxing.com/visit/stucoursemiddle?courseid=200394758&clazzid=31490204&vc=1&cpi=100584671"
+    #ke_cheng_url = "https://mooc1-1.chaoxing.com/visit/stucoursemiddle?courseid="
     #main = chaoxing(headers,ke_cheng_url)
     #zhangjie = main.play_speed(99)
-    chaoxi = chaoxing(headers)
+    # chaoxi = chaoxing(headers,_jia=_jia)
     #print(chaoxi.huoqukecheng())
     ti = {0: {'topic': '“眼不见为净” ，这属于自我防御机制中的（  ）。', 'topic_type': '单选题', 'ti': ['投射', '否认', '隔离', '转移','补偿']}
           }
     # aaa = chaoxi.daoru(ti)
-    url = 'https://mooc1.chaoxing.com/visit/stucoursemiddle?courseid=205404001&clazzid=10849188&cpi=42950094&ismooc2=1'
+    url = 'https://mooc2-ans.chaoxing.com/mycourse/stu?courseid='
     def a(a):
         pass
-    print(chaoxi.huoquzhangjie(url,a))
+    #print(chaoxi.huoqukecheng())
     #chaoxi.play_speed(1,fe)

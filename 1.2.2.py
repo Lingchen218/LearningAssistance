@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from tkinter import messagebox
 from DeviceInformation import DeviceInformation
 import tkinter as tk
+import js2py
 from SysTrayIcon import *
 from tkinter.ttk import *
 from chaoxing import chaoxing
@@ -685,6 +686,7 @@ class choa:
             self.bofzhuangt_.place(relx=0.1, rely=0.48, relwidth=0.7, relheight=0.05)
             self.status = Label(TabStrip1__Tab1, text='状态', )
             self.status.place(relx=0.1, rely=0.1, relwidth=0.2, relheight=0.05)
+            kec = None
             if type_int == 0:
                 self.chao_ = chaoxing(self.headers,self.status, _jia = self._jia)  # 超星获取课程
                 kec = self.chao_.huoqukecheng()
@@ -692,6 +694,8 @@ class choa:
                 chao_ = zhihuishu(self.headers) # 智慧树获取课程
                 kec = chao_.huoqukecheng()
             self.huoqukecheng_status = Label(TabStrip1__Tab1, text='成功获取到课程')
+            if not kec:
+                self.huoqukecheng_status['text'] = "获取课程失败"
             self.huoqukecheng_status.place(relx=0.35, rely=0.1, relwidth=0.2, relheight=0.05)
             kecheng = []
             for i, isd in kec.items():
@@ -749,7 +753,7 @@ class choa:
         header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
         }
-        import js2py
+
         content = js2py.EvalJs()
         content.execute(open('js/chaoxinglogin.js', 'r', encoding='utf-8').read())
 
@@ -762,16 +766,19 @@ class choa:
         }
         try:
             cookies = requests.post(logo_url, headers=header, data=data,timeout=10)
-            print(cookies.json())
+
             if cookies.json()['status']:
                 _uid = '_uid=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 _d = '_d=' + re.findall('_d=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 vc3 = 'vc3=' + re.findall('vc3=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 UID = 'UID=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                uf = 'uf=' + re.findall('uf=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-                    'Cookie': _uid +_d+vc3+UID
+                    'Cookie': _uid +_d+vc3+UID+uf
                 }
+                print("登录成功")
                 return headers
             else:
                 masg = str(cookies.json()['msg2'])
