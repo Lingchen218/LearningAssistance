@@ -752,6 +752,7 @@ class choa:
         except Exception as e:
             tkinter.messagebox.showinfo('网络故障', e, parent=self.window)
             print("网络出现故障",e)
+            return None
         url = busp.find('p',{'class':'loginbefore'}).a.get('href')
         logo_url = 'https://' +re.findall('//(.*?)/',url)[0] + '/fanyalogin'
         header = {
@@ -759,7 +760,12 @@ class choa:
         }
 
         content = js2py.EvalJs()
-        content.execute(open('js/chaoxinglogin.js', 'r', encoding='utf-8').read())
+        try:
+            with open('./js/chaoxinglogin.js', 'r', encoding='utf-8') as f:
+                content.execute(f.read())
+        except Exception as e:
+            tkinter.messagebox.showinfo('文件不存在', e, parent=self.TabStrip1)  # 提示框
+            return None
 
 
         data = {
@@ -782,7 +788,7 @@ class choa:
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
                     'Cookie': _uid +_d+vc3+UID+uf
                 }
-                print("登录成功")
+
                 return headers
             else:
                 masg = str(cookies.json()['msg2'])
@@ -800,7 +806,7 @@ class choa:
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         url_login = 'https://passport.zhihuishu.com/login'
-        url_post = 'https://passport.zhihuishu.com/user/validateAccountAndPassword?u_asec=099%23KAFEH7E2EgdEhGTLEEEEEpEQz0yFD6fFDXR4G6NcSu3YW6DTSu34G60hS%2FUTEEaStIIEXyaSt3xVN3tXE7EFEE1Cb%2FUTEEaStoUEPssSt3icd%2FlxE7EoVXBlluZhi1kFdR1tLquJdK%2FzLy1HD0wDgcBKCfITET3Qu3llsM27tznaLmhXZMyUN9%2BjSYFEH3ntlllPgeLFzqBKC0OigrpFVovKMYFEwlntlllBdzL6guRHPMaj4fITETwtl9llsMy3UWJx4okwn0vdMYFEwlndlllB8zL6guRHPMaj4BMTEEvStU7FSyaSQzHZE7EKt35cT1ZdtcRBBYFETEEEbOKhE7Eht3BlluZdWEFE5Yq9d7ThQa4Q6avqLx1GkLfoRHvk3IYtIkj2iHovbHUVBwDIkmw%2BB1Aa3mvkqUYl6iYDwUQQVaFDRJ9yk8lDqwP%2BM6A0pu7Qcv64JmDVrCT4kLvhE7wEE1uCxyaIcL%2BVJBDtzqkVri%2BniblWYwxS6RUqLOaKHshnPvn6rtCS6VuV1SW%2BCshCvLi3aWiBJ0XBPSn6%2FfcCryIViGCnSgot6Riqwsnc6RUBbMS6uVXnbs7n9MrsDsXaPw9qaWw7rjZBNdQpzt7QPa4W3m1dDixWPRvqwle0Ps2B6UZR%2Ffc9ryIViGCnSzQScLOcLrsTNson6YA6bopCcirS%2BY%2FWYwxS6RUqLOaKHshnPvn6rtCS6VXaLoZsnR7nBEFE13iSEq5e8e3tsYFET%2FyZTEwmLuGTE1YRthslF46U23iSH3lP%2F3MFt375luZdtV9StTilsyanaliSlnsP%2F3iUlYFETKxqAjJ5E7EFt37EFc7TEE7EYRpCfYFEF%2FnlFYEi%2F3i%2BBwWVa0vi8fZfWDQTEE7EERpCBYFETEEEbOKXE7EFEE1CbNQTEE7EERpC&u_atype=2'
+        url_post = 'https://passport.zhihuishu.com/user/validateAccountAndPassword?u_asec=099%23KAFEH7E2EgdEhGTLEEEEEpEQz0yFD6fFDXR4G6NcSu3YW6DTSu34G60hS%2FUTEEaStIIEXyaSt3xVN3'
         SERVERID = requests.post(url_post,headers=headers,).headers
 
         
