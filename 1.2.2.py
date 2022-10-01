@@ -756,7 +756,7 @@ class choa:
         url = busp.find('p',{'class':'loginbefore'}).a.get('href')
         logo_url = 'https://' +re.findall('//(.*?)/',url)[0] + '/fanyalogin'
         header = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
         }
 
         content = js2py.EvalJs()
@@ -776,17 +776,21 @@ class choa:
         }
         try:
             cookies = requests.post(logo_url, headers=header, data=data,timeout=10)
-
             if cookies.json()['status']:
                 _uid = '_uid=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 _d = '_d=' + re.findall('_d=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                vc = 'vc=' + re.findall('vc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                vc2 = 'vc2=' + re.findall('vc2=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 vc3 = 'vc3=' + re.findall('vc3=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 UID = 'UID=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 uf = 'uf=' + re.findall('uf=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-
+                fid = 'fid=' + re.findall('fid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                JSESSIONID = 'JSESSIONID='+ re.findall('JSESSIONID=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                xxtenc = 'xxtenc='+ re.findall('xxtenc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                DSSTASH_LOG = 'DSSTASH_LOG='+ re.findall('DSSTASH_LOG=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-                    'Cookie': _uid +_d+vc3+UID+uf
+                    'Cookie': _uid +_d+vc3+vc+vc2+UID+uf+fid+JSESSIONID+xxtenc+DSSTASH_LOG
                 }
 
                 return headers
@@ -952,14 +956,12 @@ class choa:
 
                 def dengdai(isc):
                     start_text = self.bofzhuangt_['text']
-
                     while isc > -1:
                         TabStrip1__Tab1.after(1000)
                         self.start_.config(text='如果你的章节过多时间会很长' + str(isc), state=DISABLED)
                         TabStrip1__Tab1.update()
                         if self.bofzhuangt_['text']=="当前课程播放完毕":
                             break
-
                         if start_text != self.bofzhuangt_['text']:
                             sleep(1)
                             self.start_.config(text='已经开始刷课了')
@@ -983,7 +985,7 @@ class choa:
 
                     if not self.sysTrayIcon.Isminmize:
                         self.bofzhuangt_['text'] = "已经开始刷课了"
-                        tkinter.messagebox.showinfo('提示', '已经开始刷课了')
+                        # tkinter.messagebox.showinfo('提示', '已经开始刷课了')
 
                     if kaoshi:
                         # 开启刷视频章节测试和考试
