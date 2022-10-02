@@ -390,7 +390,7 @@ class choa:
     def th(self,funcs = None):
         for func in funcs:
             t1 = threading.Thread(target=func)
-            t1.setDaemon(True)
+            t1.daemon = True
             t1.start()
 
     # 保存用户密码
@@ -440,7 +440,7 @@ class choa:
             if len(user)>5 and len(password)>5:
                 denglu_anniu.config(text='正在登录中...',state=DISABLED)
                 t1 = threading.Thread(target=self.chao,args=(user,password,type_int,denglu_anniu,status,TabStrip1__Tab1))
-                t1.setDaemon(True)
+                t1.daemon = True
                 t1.start()
             else:
                 tkinter.messagebox.showinfo('提示', '请输入正确的账号密码',parent=self.TabStrip1)  # 提示框
@@ -733,7 +733,7 @@ class choa:
             def a():
 
                 t1 = threading.Thread(target=self.shuake,args=(TabStrip1__Tab1,speed_))
-                t1.setDaemon(True)
+                t1.daemon = True
                 t1.start()
         else:
             status.config(text='密码输入错误')
@@ -1012,7 +1012,7 @@ class choa:
                 t3 = threading.Thread(target=tijiao_kecheng, args=(data,))
                 threads.append(t3)
                 for t in threads:
-                    t.setDaemon(True)
+                    t.daemon = True
                     t.start()
             except Exception as f:
                 print("有错误1011")
