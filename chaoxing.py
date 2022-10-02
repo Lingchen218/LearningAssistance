@@ -1,3 +1,4 @@
+# -- coding: utf-8 --
 import asyncio
 
 import requests,re,json,hashlib,time,base64
@@ -42,8 +43,8 @@ def chaoxinglogin(user,password):
         else:
             print('登录失败')
             return False
-    except:
-        print('登录失败')
+    except Exception as e:
+        print('登录失败',e)
         pass
 class chaoxing():
     def __init__(self, headers: dict,bofzhuangt_=None,**kwargs):
@@ -63,38 +64,36 @@ class chaoxing():
         pass
     def huoqukecheng(self):
 
-        indexs_url = 'https://i.chaoxing.com/base'
+        indexs_url = 'https://mooc2-ans.chaoxing.com/mooc2-ans/visit/courses/list'
         try:
+            response = requests.get(indexs_url, headers=self.headers)
 
+            busp = BeautifulSoup(response.text,'html.parser')
 
-            busp = BeautifulSoup(requests.get(indexs_url, headers=self.headers).text,'html.parser')
-
-            url = busp.find('li',{'name':'课程'}).get('dataurl')
-
-            response = requests.get(url,headers=self.headers)
-
-        except:
-            print('课程获取失败')
+            lilist = busp.findAll('div',{"class":"course-cover"})
+        except Exception as e:
+            print('课程获取失败',e)
             return  {}
-            # tkinter.messagebox.showinfo('提示', '网络连接超时')  # 提示框
-        busu = BeautifulSoup(response.text, 'html.parser').findAll('li',{'class':"courseItem curFile"})
-
         kec = {}
-        self.host_url = re.findall('//(.*?)/',url)[0]
-        for i, ii in zip(busu, range(0, len(busu))):
+        # self.host_url = re.findall('//(.*?)/',url)[0]
+        for i, ii in zip(lilist, range(0, len(lilist))):
             # print(i.find('div',{'class':'Mconright httpsClass'}).h3.a.get("title"))
-            url = re.sub('amp;', '', 'https://' + re.findall('//(.*?)/',url)[0] + i.find('div').a.get('href'))
-
-            kec[ii] = {i.find('div',{'class':'Mconright httpsClass'}).h3.a.get("title"):url.strip()}
+            if not i.span:
+                url = re.sub('amp;', '',    i.a.get('href'))
+                kec[ii] = {i.next_sibling.next_sibling.h3.a.span.get("title"):url.strip()}
         return kec
     def huoquzhangjie(self,ke_cheng_url,msgbox):
 
         self.msgbox = msgbox
         self.ke_cheng_url = ke_cheng_url
+        reg = 'courseid=(.*?)&'
+        courseid = re.findall(reg, ke_cheng_url)[0]
         url = requests.get(ke_cheng_url, headers=self.headers, allow_redirects=False).headers['Location']
+        self.host_url = re.findall(r'://(.*?)/',ke_cheng_url)[0]
+
+
         url if url else print("没有找到返回地址")
-        reg = 'courseId=(.*?)&'
-        courseid = re.findall(reg, url)[0]
+
         reg = 'clazzid=(.*?)&'
         clazzid = re.findall(reg, url)[0]
         reg = 'cpi=(.*?)&'
@@ -124,8 +123,8 @@ class chaoxing():
                 knowledgeId = idstr[1]
                 clazzid = idstr[2]
                 url = 'https://' + self.host_url + '/mycourse/studentstudy?chapterId=' + str(
-                    knowledgeId) + '&courseId=' + str(courseid) + '&clazzid=' + str(
-                    clazzid) + '&enc=' + enc + '&mooc2=1'
+                    knowledgeId) + '&courseId=' + str(courseid) + '&clazzid=' + \
+                      str(clazzid) + '&enc=' + enc + '&mooc2=1'
                 url = quote(url, 'utf-8')
                 url = 'https://' + self.host_url + '/mycourse/transfer?moocId=' + str(courseid) + '&clazzid=' + str(
                     clazzid) + '&ut=s&refer=' + url
@@ -289,7 +288,6 @@ class chaoxing():
                 '''
         # print(fe)
         if fe:
-            print(fe)
             for i, j in fe.items():
                 # 播放视频
                 if 'video' in j:  # 播放视频
@@ -310,7 +308,6 @@ class chaoxing():
                         name = i1['name']
                         ic = int(i1['headOffset']/1000)  # 当前视频播放的位置
 
-                        print(ic)
                         while ic < duration:
                             bofang = ic
                             if videoendtime - bofang < 60:
@@ -358,7 +355,6 @@ class chaoxing():
         # self.bofzhuangt_.config(text='正在答题  '+title)
         url = 'https://'+self.host_url+'/api/work'
         html = requests.get(url, params=data_url, headers=self.headers, allow_redirects=False).url
-        print(html)
         url = requests.get(html, headers=self.headers, allow_redirects=False)
         print(url.text)
         url = url.headers['Location']
@@ -448,7 +444,6 @@ class chaoxing():
         url = self.jia['url']+'/shuake_urser_logo.php?action=topic'
         self.jia['topic'] = topic
         op = requests.post(url, data=self.jia, timeout=25,headers=self.jia['headers'])  # 答案
-        print(op.json())
         try:
             op = op.json()
             if op['0'] == '': # 没有答案
@@ -471,7 +466,8 @@ class chaoxing():
                     if x['topic_type'] == '判断题':
                         daan_op[j] = op[str(j)].lower()
                 return daan_op
-        except:
+        except Exception as e:
+            print("获取答案失败",e)
             return False
     def Answer(self, url, daan, kaoshi=False):
         '''构建答题请求
@@ -590,8 +586,8 @@ class chaoxing():
             try:
                 try:
                     response = requests.post(url=get_dizhi, data=tijiao_data, headers=headers, allow_redirects=False).json()
-                except:
-                    print('答题出错')
+                except Exception as e:
+                    print('答题出错',e)
             except Exception as e:
                 print(e)
                 print('此题可能已经完成')

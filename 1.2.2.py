@@ -11,6 +11,7 @@ from tkinter import messagebox
 from DeviceInformation import DeviceInformation
 import tkinter as tk
 import js2py
+import platform
 from SysTrayIcon import *
 from tkinter.ttk import *
 from chaoxing import chaoxing
@@ -18,7 +19,9 @@ from chaoxing import chaoxing
 os.environ['NO_PROXY'] = 'thenobleyou.com'  # 设置直接连接 不使用任何代理
 os.environ['NO_PROXY'] = 'chaoxing.com'
 version = '1.2.2'
-describe = '本软件支持超星的全部刷课流程 本次更新为9月17日 软件修复若干bug'
+describe = '本软件支持超星的全部刷课流程 本次更新为9月17日 软件修复若干bug 当前python版本' + platform.python_version()
+
+
 
 
 class zhihuishu():
@@ -45,7 +48,6 @@ class zhihuishu():
             # 获取学校id
             url = 'https://onlineservice.zhihuishu.com/student/home/index/getCertificateInfo?uuid={}'.format(self.uuid)
             school_id = requests.get(url,headers=self.headers).json()['result']['schoolId']
-            print(school_id,url)
             url = 'http://onlineservice.zhihuishu.com/student/course/share/querySelectCourseInfo'
             params = {
                 'schoolId':school_id,
@@ -138,19 +140,13 @@ class choa:
             tkinter.messagebox.showinfo('欢迎使用', '欢迎使用本软件'+self.data_json['announcement'],parent=self.window) # 提示框
     # 主函数
     def main(self):
-
-
-
         self.th((self.shouyetishi,self.ico_,))
-
         sleep(0.5)
         self.window.title('超星刷课助手')
         self.window.geometry(self.Getsizecoor(800,600))  # 窗口大小
-
         menu_options = (('等待开发', None, self.switch_icon), ('大家好', None, (('io', None, self.switch_icon),)))
         self.sysTrayIcon = SysTrayIcon(self.ifc_file, '超星刷课', menu_options, default_menu_index=1,
                                        objmain=self.window, OnWinShow=self.OnwinShow, on_quit=self.exit)
-
         self.window.bind("<Unmap>", lambda event:self.Unmap() if self.window.state()=="iconic" else False )
         self.window.protocol('WM_DELETE_WINDOW', self.exit)  # 右上角的关闭事件
         self.logo_button = Button(self.window, text="登录",command=lambda: self.th((self.ruanjilogo,)))  # 登录按钮
