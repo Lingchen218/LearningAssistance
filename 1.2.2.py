@@ -665,15 +665,17 @@ class choa:
     # 软件超星登录
     def chao(self,user,password,type_int,denglu_anniu,status,TabStrip1__Tab1):  # 登录超星页面点击录按钮触发
         status.config(text='正在登录')
+        bloginsuccess = False
         if type_int==0:
-            self.headers = self.chaoxing_login(user,password,denglu_anniu)
+            self.chao_ = chaoxing(_jia=self._jia)
+            bloginsuccess = self.chao_.login(user,password)
         elif type_int==1:
             # self.headers = self.zhihui_login(user,password)
             self.headers = False
             print('智慧树登录开发中')
 
 
-        if self.headers:
+        if bloginsuccess:
 
             status.config(text='登录成功')
             for widget in TabStrip1__Tab1.winfo_children():
@@ -684,8 +686,8 @@ class choa:
             self.status.place(relx=0.1, rely=0.1, relwidth=0.2, relheight=0.05)
             kec = None
             if type_int == 0:
-                self.chao_ = chaoxing(self.headers,self.status, _jia = self._jia)  # 超星获取课程
-                kec = self.chao_.huoqukecheng()
+                  # 超星获取课程
+                kec = self.chao_.huoqukecheng()  #获取超星课程
             elif type_int == 1:
                 chao_ = zhihuishu(self.headers) # 智慧树获取课程
                 kec = chao_.huoqukecheng()
@@ -738,65 +740,6 @@ class choa:
             elif type_int == 1:
                 tkinter.messagebox.showinfo('提示', '智慧树账号或密码输入错误',parent=self.TabStrip1)  # 提示框
 
-            denglu_anniu.config(text='请重新登陆', state=NORMAL)
-
-    # 超星官网登录，手机号登录
-    def chaoxing_login(self,user,password,denglu_anniu):
-        busp = None
-        try:
-            busp = BeautifulSoup(requests.get('http://www.chaoxing.com/',timeout=5).text, 'html.parser')
-        except Exception as e:
-            tkinter.messagebox.showinfo('网络故障', e, parent=self.window)
-            print("网络出现故障",e)
-            return None
-        url = busp.find('p',{'class':'loginbefore'}).a.get('href')
-        logo_url = 'https://' +re.findall('//(.*?)/',url)[0] + '/fanyalogin'
-        header = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
-        }
-
-        content = js2py.EvalJs()
-        try:
-            with open('./js/chaoxinglogin.js', 'r', encoding='utf-8') as f:
-                content.execute(f.read())
-        except Exception as e:
-            tkinter.messagebox.showinfo('文件不存在', e, parent=self.TabStrip1)  # 提示框
-            return None
-
-
-        data = {
-            'fid': '-1',
-            'uname': str(user),
-            'password': content.encryptByDES(password, "u2oh6Vu^HWe40fj"),
-            't': 'true'
-        }
-        try:
-            cookies = requests.post(logo_url, headers=header, data=data,timeout=10)
-            if cookies.json()['status']:
-                _uid = '_uid=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                _d = '_d=' + re.findall('_d=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                vc = 'vc=' + re.findall('vc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                vc2 = 'vc2=' + re.findall('vc2=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                vc3 = 'vc3=' + re.findall('vc3=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                UID = 'UID=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                uf = 'uf=' + re.findall('uf=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                fid = 'fid=' + re.findall('fid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                JSESSIONID = 'JSESSIONID='+ re.findall('JSESSIONID=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                xxtenc = 'xxtenc='+ re.findall('xxtenc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                DSSTASH_LOG = 'DSSTASH_LOG='+ re.findall('DSSTASH_LOG=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-                    'Cookie': _uid +_d+vc3+vc+vc2+UID+uf+fid+JSESSIONID+xxtenc+DSSTASH_LOG
-                }
-
-                return headers
-            else:
-                masg = str(cookies.json()['msg2'])
-                tkinter.messagebox.showinfo('提示', masg, parent=self.window)  # 提示框
-
-                return False
-        except:
-            tkinter.messagebox.showinfo('提示', '网络连接超时,请重新打开软件', parent=self.window)  # 提示框
             denglu_anniu.config(text='请重新登陆', state=NORMAL)
 
     # 智慧树登录
@@ -947,7 +890,8 @@ class choa:
             data['clazzid'] = clazzid  # 课程的id
             data['kecheng_name'] = kecheng_name  # 课程的名字
             data['mima'] = str(self.mima)  # 本系统的用户名
-            data['uid'] = self.headers['Cookie']  # 超星的用户id
+
+            data['uid'] = self.chao_.getheaders()['Cookie']  # 超星的用户id
             try:
 
                 def dengdai(isc):

@@ -2,7 +2,7 @@
 
 目前支持 超星慕课
 需要安装的环境 
-requests pywin32 js2py BeautifulSoup4
+requests pywin32 js2py BeautifulSoup4 pyDes
 
 目前只能播放视频，不能自动答题，目前没有题库
 

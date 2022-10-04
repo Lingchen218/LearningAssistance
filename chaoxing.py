@@ -4,50 +4,16 @@ import asyncio
 import requests,re,json,hashlib,time,base64
 from bs4 import BeautifulSoup
 from urllib.parse import quote
-from tkinter import *
+from pyDes import des, PAD_PKCS5
 import js2py
+import binascii
 version = '1.2.2'
 headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'}
 
 
-def chaoxinglogin(user,password):
-    busp = BeautifulSoup(requests.get('http://www.chaoxing.com/').text, 'html.parser')
-    url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
-    logo_url = 'https://' + re.findall('//(.*?)/', url)[0] + '/fanyalogin'
-    content = js2py.EvalJs()
-    content.execute(open('js/chaoxinglogin.js', 'r', encoding='utf-8').read())
-    header = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-    }
-    data = {
-        'fid': '-1',
-        'uname': str(user),
-        'password': content.encryptByDES(password, "u2oh6Vu^HWe40fj"),
-        't': 'true'
-    }
-    try:
-        cookies = requests.post(logo_url, headers=header, data=data,timeout=10)
 
-        _uid = '_uid='+re.findall('_uid=(.*?);',cookies.headers['Set-Cookie'])[0]+';'
-        _d = '_d='+ re.findall('_d=(.*?);',cookies.headers['Set-Cookie'])[0]+';'
-        vc3 = 'vc3='+ re.findall('vc3=(.*?);',cookies.headers['Set-Cookie'])[0]+';'
-        UID = 'UID=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-        if cookies.json()['status']:
-            print('登录失败')
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-                'Cookie': _uid +_d+vc3+UID
-            }
-
-            return headers
-        else:
-            print('登录失败')
-            return False
-    except Exception as e:
-        print('登录失败',e)
-        pass
 class chaoxing():
-    def __init__(self, headers: dict,bofzhuangt_=None,**kwargs):
+    def __init__(self,**kwargs):
         '''
         headers:成功登录的headers cookie头
 
@@ -58,10 +24,72 @@ class chaoxing():
 
         self.jia = kwargs["_jia"]()
         self.host_url = None
-        self.bofzhuangt_ = bofzhuangt_
-        self.headers = headers
+
+        self.headers = None
     def __int__(self):
         pass
+    def login(self,user,password):
+        try:
+            busp = BeautifulSoup(requests.get('http://www.chaoxing.com/', timeout=5).text, 'html.parser')
+        except Exception as e:
+            # tkinter.messagebox.showinfo('网络故障', e, parent=self.window)
+            print("网络出现故障", e)
+            return None
+        url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
+        logo_url = 'https://' + re.findall('//(.*?)/', url)[0] + '/fanyalogin'
+        header = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
+        }
+
+        content = js2py.EvalJs()
+        try:
+            with open('./js/chaoxinglogin.js', 'r', encoding='utf-8') as f:
+                content.execute(f.read())
+        except Exception as e:
+            print(456)
+            # tkinter.messagebox.showinfo('文件不存在', e, parent=self.TabStrip1)  # 提示框
+            return None
+        
+        data = {
+            'fid': '-1',
+            'uname': str(user),
+            'password': content.encryptByDES(password, "u2oh6Vu^HWe40fj"),
+            't': 'true'
+        }
+        try:
+            cookies = requests.post(logo_url, headers=header, data=data, timeout=10)
+            if cookies.json()['status']:
+                _uid = '_uid=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                _d = '_d=' + re.findall('_d=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                vc = 'vc=' + re.findall('vc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                vc2 = 'vc2=' + re.findall('vc2=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                vc3 = 'vc3=' + re.findall('vc3=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                UID = 'UID=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                uf = 'uf=' + re.findall('uf=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                fid = 'fid=' + re.findall('fid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                JSESSIONID = 'JSESSIONID=' + re.findall('JSESSIONID=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                xxtenc = 'xxtenc=' + re.findall('xxtenc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                DSSTASH_LOG = 'DSSTASH_LOG=' + re.findall('DSSTASH_LOG=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
+                    'Cookie': _uid + _d + vc3 + vc + vc2 + UID + uf + fid + JSESSIONID + xxtenc + DSSTASH_LOG
+                }
+
+                self.headers = headers
+                return  True
+            else:
+                masg = str(cookies.json()['msg2'])
+                # tkinter.messagebox.showinfo('提示', masg, parent=self.window)  # 提示框
+                print(456)
+                return False
+        except:
+            print(789)
+            pass
+            # tkinter.messagebox.showinfo('提示', '网络连接超时,请重新打开软件', parent=self.window)  # 提示框
+            # denglu_anniu.config(text='请重新登陆', state=NORMAL)
+
+    def getheaders(self):
+        return self.headers
     def huoqukecheng(self):
 
         indexs_url = 'https://mooc2-ans.chaoxing.com/mooc2-ans/visit/courses/list'
@@ -719,7 +747,7 @@ class chaoxing():
         else:
             print('没有找到答案')
 if __name__=="__main__":
-    headers = chaoxinglogin('手机号','密码')
+    # headers = chaoxinglogin('手机号','密码')
     # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36', 'Cookie': '_uid=111016516;_d=1602406088870;vc3=S5M7HcCaSFEKGjtzkbAVhwCxEvqzbrxF%2FyPiKtWVRR2UqrKjIzSyk5Nr0EqMA1yVA0YxJf3YLB0KLTcQayCv%2BtRUk5fqUKINYZqx8vvUkfrJY7Jca9sOge%2Bf1muiQqLm%2BrJ250vIXgnatqsp28JyMO18wYSEW%2BFuIOIU8RuElNk%3D8e1004da4a3cb00e069ec12907ff2fec;UID=111016516;'}
     #ke_cheng_url = "https://mooc1-1.chaoxing.com/visit/stucoursemiddle?courseid="
     #main = chaoxing(headers,ke_cheng_url)
