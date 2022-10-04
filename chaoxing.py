@@ -1,14 +1,12 @@
 # -- coding: utf-8 --
 import asyncio
 
-import requests,re,json,hashlib,time,base64
+import requests,re,json,hashlib,time
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from pyDes import des, PAD_PKCS5
-import js2py
 import binascii
 version = '1.2.2'
-headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'}
 
 
 
@@ -36,7 +34,7 @@ class chaoxing():
             return None
         url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
         logo_url = 'https://' + re.findall('//(.*?)/', url)[0] + '/fanyalogin'
-        header = {
+        headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
         }
         des_obj = des("u2oh6Vu^", "u2oh6Vu^", pad=None, padmode=PAD_PKCS5)
@@ -48,7 +46,7 @@ class chaoxing():
             't': 'true'
         }
         try:
-            cookies = requests.post(logo_url, headers=header, data=data, timeout=10)
+            cookies = requests.post(logo_url, headers=headers, data=data, timeout=10)
             if cookies.json()['status']:
                 _uid = '_uid=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 _d = '_d=' + re.findall('_d=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
@@ -61,10 +59,8 @@ class chaoxing():
                 JSESSIONID = 'JSESSIONID=' + re.findall('JSESSIONID=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 xxtenc = 'xxtenc=' + re.findall('xxtenc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
                 DSSTASH_LOG = 'DSSTASH_LOG=' + re.findall('DSSTASH_LOG=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
-                    'Cookie': _uid + _d + vc3 + vc + vc2 + UID + uf + fid + JSESSIONID + xxtenc + DSSTASH_LOG
-                }
+
+                headers['Cookie'] = _uid + _d + vc3 + vc + vc2 + UID + uf + fid + JSESSIONID + xxtenc + DSSTASH_LOG
 
                 self.headers = headers
                 return  True
@@ -739,7 +735,6 @@ class chaoxing():
             print('没有找到答案')
 if __name__=="__main__":
     # headers = chaoxinglogin('手机号','密码')
-    # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36', 'Cookie': '_uid=111016516;_d=1602406088870;vc3=S5M7HcCaSFEKGjtzkbAVhwCxEvqzbrxF%2FyPiKtWVRR2UqrKjIzSyk5Nr0EqMA1yVA0YxJf3YLB0KLTcQayCv%2BtRUk5fqUKINYZqx8vvUkfrJY7Jca9sOge%2Bf1muiQqLm%2BrJ250vIXgnatqsp28JyMO18wYSEW%2BFuIOIU8RuElNk%3D8e1004da4a3cb00e069ec12907ff2fec;UID=111016516;'}
     #ke_cheng_url = "https://mooc1-1.chaoxing.com/visit/stucoursemiddle?courseid="
     #main = chaoxing(headers,ke_cheng_url)
     #zhangjie = main.play_speed(99)

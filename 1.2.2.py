@@ -2,15 +2,13 @@
 
 import cProfile
 
-import time,re,hashlib,webbrowser,os,requests,json,threading,tkinter.messagebox,tempfile
-from tkinter import *
+import time,re,hashlib,webbrowser,requests,json,threading,tkinter.messagebox,tempfile
 from tkinter import ttk
 from time import sleep
 from bs4 import BeautifulSoup
 from tkinter import messagebox
 from DeviceInformation import DeviceInformation
 import tkinter as tk
-import js2py
 import platform
 from SysTrayIcon import *
 from tkinter.ttk import *
@@ -20,9 +18,6 @@ os.environ['NO_PROXY'] = 'thenobleyou.com'  # 设置直接连接 不使用任何
 os.environ['NO_PROXY'] = 'chaoxing.com'
 version = '1.2.2'
 describe = '本软件支持超星的全部刷课流程 本次更新为9月17日 软件修复若干bug 当前python版本' + platform.python_version()
-
-
-
 
 class zhihuishu():
     def __init__(self,cookie):
@@ -85,7 +80,7 @@ class choa:
         self.timezhuce = self.data_json.get("Registercount",60)  # 注册验证码时长
         self.Devicesinfo = DeviceInformation()
         # 获取屏幕分辨率
-        self.window = tkinter.Tk()
+        self.window = tk.Tk()
         self.screenWidth = self.window.winfo_screenwidth()
         self.screenHeight = self.window.winfo_screenheight()
         self.createconfigfile()
@@ -133,11 +128,11 @@ class choa:
     def shouyetishi(self):
         if not self.data_json:
             sleep(1)
-            tkinter.messagebox.showinfo('提示', '网络连接超时',parent=self.window)  # 提示框
+            tk.messagebox.showinfo('提示', '网络连接超时',parent=self.window)  # 提示框
             self.window.destroy()
         else:
             sleep(1)
-            tkinter.messagebox.showinfo('欢迎使用', '欢迎使用本软件'+self.data_json['announcement'],parent=self.window) # 提示框
+            tk.messagebox.showinfo('欢迎使用', '欢迎使用本软件'+self.data_json['announcement'],parent=self.window) # 提示框
     # 主函数
     def main(self):
         self.th((self.shouyetishi,self.ico_,))
@@ -157,10 +152,10 @@ class choa:
         text_s = Label(self.window, text=describe)
         pass_text = Label(self.window, text='密码')
         self.confirmLabel = Label(self.window)  # 登录时的状态
-        user_ = StringVar()
+        user_ = tk.StringVar()
         user_.set(self.user_xinxi)
         self.pass_Entry = Entry(self.window, textvariable=user_, width=25, font=("Times", 10, "bold"))  # 账号框
-        passwd_ = StringVar()
+        passwd_ = tk.StringVar()
         passwd_.set(self.user_pass)
         self.namee_Entry = Entry(self.window, show="*", textvariable=passwd_, width=25,font=("Times", 10, "bold"))  # 密码框
         logo.place(relx=0.15, rely=0.2, relwidth=0.3, relheight=0.05)
@@ -180,8 +175,8 @@ class choa:
 
     # 输入自动输入账号密码
     def autoinputuserpass(self):
-        self.pass_Entry.delete(0,END)  # 用户名
-        self.namee_Entry.delete(0,END) #
+        self.pass_Entry.delete(0,tk.END)  # 用户名
+        self.namee_Entry.delete(0,tk.END) #
         self.namee_Entry.insert(0,self.user_pass)
         self.pass_Entry.insert(0,self.user_xinxi)
     # 运行时软件图标
@@ -220,7 +215,7 @@ class choa:
                 'version_':version==self.data_json['viersion'],
                 'password4':hashlib.md5(passwords).hexdigest(),
                 'headers':{
-                    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36',
+                    'User-Agent':self.headers['User-Agent'],
                     'Cookie':cookies+'_'+str(_t),
                     'referer':self.data_json['url']
                 }
@@ -232,7 +227,7 @@ class choa:
     # 找回密码
     def back(self):
         self.window.withdraw()
-        self.windowregret = Tk()
+        self.windowregret = tk.Tk()
         self.windowregret.iconbitmap(self.ifc_file)
         self.windowregret.geometry(self.Getsizecoor(500,500))  # 窗口大小
         self.windowregret.title('超星助手找回密码')  # 窗口的title
@@ -268,21 +263,21 @@ class choa:
 
                     response = response1.json()
                     if response['status']=='1':
-                        tkinter.messagebox.showinfo('提示', '修改成功，请使用新密码登录')
+                        tk.messagebox.showinfo('提示', '修改成功，请使用新密码登录')
                         self.window.deiconify()
                         self.windowregret.destroy()
                     elif response['status']=='15':
-                        tkinter.messagebox.showinfo('提示', '验证码错误')
+                        tk.messagebox.showinfo('提示', '验证码错误')
                     elif response['status']=='16':
-                        tkinter.messagebox.showinfo('提示', '邮箱输入有误或密码有误')
+                        tk.messagebox.showinfo('提示', '邮箱输入有误或密码有误')
                     else:
-                        tkinter.messagebox.showinfo('提示', '未知错误')
+                        tk.messagebox.showinfo('提示', '未知错误')
                 else:
-                    tkinter.messagebox.showinfo('提示', '邮箱输入有误或密码有误')
+                    tk.messagebox.showinfo('提示', '邮箱输入有误或密码有误')
             else:
-                tkinter.messagebox.showinfo('提示', '邮箱地址不存在')
+                tk.messagebox.showinfo('提示', '邮箱地址不存在')
         def on_closing():
-            if tkinter.messagebox.askokcancel("找回密码", "是否退出？"):
+            if tk.messagebox.askokcancel("找回密码", "是否退出？"):
 
 
                 self.windowregret.destroy()
@@ -292,7 +287,7 @@ class choa:
         self.windowregret.mainloop()
     # 账号密码确定
     def ruanjilogo(self):
-        self.logo_button.config(state=DISABLED)
+        self.logo_button.config(state=tk.DISABLED)
         self.mima = self.pass_Entry.get()
         self.ruan_user = self.namee_Entry.get()
         if len(self.mima) > 0 and len(self.ruan_user) > 0:
@@ -300,7 +295,7 @@ class choa:
             self.user_logo()
         else:
             self.confirmLabel.config(text='请输入账号密码')
-            self.logo_button.config(state=NORMAL)
+            self.logo_button.config(state=tk.NORMAL)
 
     #显示窗口位置
     def Getsizecoor(self,xsizeof,ysizeof):
@@ -312,7 +307,7 @@ class choa:
     def update(self):
         url = 'http://blog.thenobleyou..com/shuake_urser_logo.php?action=registrered_update'
         if self._jia()['version_']:
-            tkinter.messagebox.showinfo('提示', '已是最新版本')  # 提示框
+            tk.messagebox.showinfo('提示', '已是最新版本')  # 提示框
         else:
             webbrowser.open(self._jia()['updata_url'])
 
@@ -334,11 +329,11 @@ class choa:
             if req == '255':
 
                 self.confirmLabel.config(text='请更新版本')
-                tkinter.messagebox.showinfo('提示', '请更新版本')  # 提示框
+                tk.messagebox.showinfo('提示', '请更新版本')  # 提示框
 
                 self.update()
 
-                self.logo_button.config(state=NORMAL)
+                self.logo_button.config(state=tk.NORMAL)
             elif req == '200':
 
                 self.saveuserpass(self.mima,self.ruan_user)
@@ -347,40 +342,40 @@ class choa:
 
                     self.confirmLabel.config(text='登录成功')
 
-                    tkinter.messagebox.showinfo('提示', '恭喜您登录成功')  # 提示框
+                    tk.messagebox.showinfo('提示', '恭喜您登录成功')  # 提示框
                     # return None
-                    self.logo_button.config(state=NORMAL)
+                    self.logo_button.config(state=tk.NORMAL)
                     self.confirmLabel.config(text='')
                     self.suss_()
                 elif response['status'] == 'inactivated':
-                    tkinter.messagebox.showinfo('提示', '账号未激活！请到邮箱中点击激活链接，如果没有请到垃圾邮件中看一下！')
-                    self.logo_button.config(state=NORMAL)
+                    tk.messagebox.showinfo('提示', '账号未激活！请到邮箱中点击激活链接，如果没有请到垃圾邮件中看一下！')
+                    self.logo_button.config(state=tk.NORMAL)
                 elif response['status'] == 'Forbidden':
                     self.confirmLabel.config(text='你被禁止登录了，请联系客服！')
-                    tkinter.messagebox.showinfo('提示', '你被禁止登录了，请联系客服！')
-                    self.logo_button.config(state=NORMAL)
+                    tk.messagebox.showinfo('提示', '你被禁止登录了，请联系客服！')
+                    self.logo_button.config(state=tk.NORMAL)
             elif req == '300':
-                self.logo_button.config(state=NORMAL)
+                self.logo_button.config(state=tk.NORMAL)
                 self.confirmLabel.config(text='账号或密码错误')
-                tkinter.messagebox.showinfo('提示', '账号或密码错误')  # 提示框
+                tk.messagebox.showinfo('提示', '账号或密码错误')  # 提示框
             elif req == '请重试':
-                self.logo_button.config(state=NORMAL)
+                self.logo_button.config(state=tk.NORMAL)
                 self.confirmLabel.config(text='你的网络时延太大，建议你跟换网络')
-                tkinter.messagebox.showinfo('提示', '你的网络时延太大，建议你跟换网络')
+                tk.messagebox.showinfo('提示', '你的网络时延太大，建议你跟换网络')
         except Exception as e:
             if str(e) == 'Extra':
                 self.confirmLabel.config(text='软件出现bug系客服')
-                self.logo_button.config(state=NORMAL)
-                tkinter.messagebox.showinfo('提示', '软件出现bug请联系客服')  # 提示框
+                self.logo_button.config(state=tk.NORMAL)
+                tk.messagebox.showinfo('提示', '软件出现bug请联系客服')  # 提示框
             elif str(e).find('HTTP') == 0:
-                self.logo_button.config(state=NORMAL)
+                self.logo_button.config(state=tk.NORMAL)
                 self.confirmLabel.config(text='网络连接超时')
-                tkinter.messagebox.showinfo('提示', '网络连接超时')  # 提示框
+                tk.messagebox.showinfo('提示', '网络连接超时')  # 提示框
             else:
                 
-                self.logo_button.config(state=NORMAL)
+                self.logo_button.config(state=tk.NORMAL)
                 self.confirmLabel.config(text='未知错误请联系客服')
-                tkinter.messagebox.showinfo('提示', '未知错误请联系客服')  # 提示框
+                tk.messagebox.showinfo('提示', '未知错误请联系客服')  # 提示框
 
     # 多线程
     def th(self,funcs = None):
@@ -434,12 +429,12 @@ class choa:
         def a(user,password,type_int,denglu_anniu,status,TabStrip1__Tab1):
 
             if len(user)>5 and len(password)>5:
-                denglu_anniu.config(text='正在登录中...',state=DISABLED)
+                denglu_anniu.config(text='正在登录中...',state=tk.DISABLED)
                 t1 = threading.Thread(target=self.chao,args=(user,password,type_int,denglu_anniu,status,TabStrip1__Tab1))
                 t1.daemon = True
                 t1.start()
             else:
-                tkinter.messagebox.showinfo('提示', '请输入正确的账号密码',parent=self.TabStrip1)  # 提示框
+                tk.messagebox.showinfo('提示', '请输入正确的账号密码',parent=self.TabStrip1)  # 提示框
                 print('请输入正确的账号密码')
     # 验证邮箱地址是否正确
     def enmail_yanz(self,email):
@@ -450,7 +445,7 @@ class choa:
     # 软件注册
     def registredet(self):
         self.window.withdraw()  # 隐藏主程序
-        self.windowregret = Tk()
+        self.windowregret = tk.Tk()
         #window1.after(1, lambda: self.window.focus_force())
         self.windowregret.geometry(self.Getsizecoor(500,500))  # 窗口大小
         self.windowregret.title('超星助手注册')  # 窗口的title
@@ -554,31 +549,31 @@ class choa:
                             if resp['error'] == '200':
                                 self.saveuserpass(struser, password)
                                 self.autoinputuserpass()
-                                tkinter.messagebox.showinfo('提示', '注册成功',parent=self.windowregret)
-                                self.zhuce1.config(state = DISABLED)
+                                tk.messagebox.showinfo('提示', '注册成功',parent=self.windowregret)
+                                self.zhuce1.config(state = tk.DISABLED)
                                 self.window.deiconify()  # 显示主窗口
                                 self.windowregret.quit()
                                 self.windowregret.destroy()  # 把当前的窗口关闭
                                 #更新当前输入框信息
                             elif resp['error'] == '205':
                                 if resp['error1'] == '203':
-                                    tkinter.messagebox.showinfo('提示', '用户名已存在,请重新注册',parent=self.windowregret)
+                                    tk.messagebox.showinfo('提示', '用户名已存在,请重新注册',parent=self.windowregret)
                             elif resp['error']=='255':
-                                tkinter.messagebox.showinfo('提示', '请更新软件',parent=self.windowregret)
+                                tk.messagebox.showinfo('提示', '请更新软件',parent=self.windowregret)
                                 self.update()
                             elif resp['error']=='256':
-                                tkinter.messagebox.showinfo('提示', '验证码失效',parent=self.windowregret)
+                                tk.messagebox.showinfo('提示', '验证码失效',parent=self.windowregret)
                         else:
-                            tkinter.messagebox.showinfo('提示', '密码太弱了',parent=self.windowregret)
+                            tk.messagebox.showinfo('提示', '密码太弱了',parent=self.windowregret)
                     else:
-                        tkinter.messagebox.showinfo('提示', '两次密码输入有误',parent=self.windowregret)
+                        tk.messagebox.showinfo('提示', '两次密码输入有误',parent=self.windowregret)
                 else:
-                    tkinter.messagebox.showinfo('提示', '账号输入有误',parent=self.windowregret)
+                    tk.messagebox.showinfo('提示', '账号输入有误',parent=self.windowregret)
 
 
             else:
 
-                tkinter.messagebox.showinfo('提示', '请输入正确内容',parent=self.windowregret)  # 提示框
+                tk.messagebox.showinfo('提示', '请输入正确内容',parent=self.windowregret)  # 提示框
         self.zhuce1 = Button(self.windowregret, text='注册', command=lambda: zhuci())
         self.zhuce1.place(relx=0.35, rely=0.6, relwidth=0.3, relheight=0.05)
         self.time = self.timezhuce # 验证码倒计时时常
@@ -643,13 +638,13 @@ class choa:
                                 atext = resp['msg']
                             else:
                                 atext = '未知错误'
-                            tkinter.messagebox.showinfo('提示', atext, parent=self.windowregret)  # 提示框
+                            tk.messagebox.showinfo('提示', atext, parent=self.windowregret)  # 提示框
                             self.time = 1
                     except:
-                        tkinter.messagebox.showinfo('提示', '服务器故障', parent=self.windowregret)  # 提示框
+                        tk.messagebox.showinfo('提示', '服务器故障', parent=self.windowregret)  # 提示框
                 else:
                     self.time = 1
-                    tkinter.messagebox.showinfo('提示', '邮箱输入错误', parent=self.windowregret)
+                    tk.messagebox.showinfo('提示', '邮箱输入错误', parent=self.windowregret)
 
             self.th((emailsendcode,))
         elif self.time == 0:
@@ -700,14 +695,14 @@ class choa:
                 for s, c in isd.items():
                     kecheng.append(s)
             kecheng = tuple(kecheng)
-            comvalue = StringVar()  # 窗体自带的文本，新建一个值
+            comvalue = tk.StringVar()  # 窗体自带的文本，新建一个值
             comvalue.set('请选择课程')
             self.comboxlist = Combobox(TabStrip1__Tab1, textvariable=comvalue)  # 初始化
             self.comboxlist["values"] = kecheng
             self.comboxlist.configure(state="readonly")
             self.comboxlist.place(relx=0.35, rely=0.2, relwidth=0.2, relheight=0.05)
             kechengming = Label(TabStrip1__Tab1, text='请选择课程-->>')
-            self.msgbox = Text(TabStrip1__Tab1,width=100,height=3,fg='red')
+            self.msgbox = tk.Text(TabStrip1__Tab1,width=100,height=3,fg='red')
             self.msgbox.insert('1.0', "登录成功\n")
             kechengming.place(relx=0.1, rely=0.2, relwidth=0.2, relheight=0.05)
             kechengming1 = Label(TabStrip1__Tab1, text='<<--点击右边的下拉箭头')
@@ -736,16 +731,16 @@ class choa:
         else:
             status.config(text='密码输入错误')
             if type_int == 0:
-                tkinter.messagebox.showinfo('提示', '超星账号密码输入错误! 如果多次输入密码错误 超星官方会冻结15分钟，请自行查看是否冻结',parent=self.TabStrip1)  # 提示框
+                tk.messagebox.showinfo('提示', '超星账号密码输入错误! 如果多次输入密码错误 超星官方会冻结15分钟，请自行查看是否冻结',parent=self.TabStrip1)  # 提示框
             elif type_int == 1:
-                tkinter.messagebox.showinfo('提示', '智慧树账号或密码输入错误',parent=self.TabStrip1)  # 提示框
+                tk.messagebox.showinfo('提示', '智慧树账号或密码输入错误',parent=self.TabStrip1)  # 提示框
 
-            denglu_anniu.config(text='请重新登陆', state=NORMAL)
+            denglu_anniu.config(text='请重新登陆', state=tk.NORMAL)
 
     # 智慧树登录
     def zhihui_login(self,user,password):
         headers = {
-            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
+            'User-Agent':self.headers['User-Ageng'],
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         url_login = 'https://passport.zhihuishu.com/login'
@@ -800,14 +795,14 @@ class choa:
 
 
         for xiaox in self.listxiaox:
-            self.msgbox.insert(END, xiaox + '\n')
-            self.msgbox.see(END)
+            self.msgbox.insert(tk.END, xiaox + '\n')
+            self.msgbox.see(tk.END)
         del self.listxiaox[:]
     # 软件的设置
     def settings_sa(self,event):
         aca = event.widget['text']
         if aca=='自动考试设置':
-            a = tkinter.messagebox.askokcancel('提示', '是否开启自动考试', parent=self.frame_r)
+            a = tk.messagebox.askokcancel('提示', '是否开启自动考试', parent=self.frame_r)
             if a:
                 self.kaoshi_ss = True
 
@@ -818,7 +813,7 @@ class choa:
                 self.kaoshi_ss = False
                 self.settings_s.config(text="已关闭自动考试")
         elif aca=='已开启自动考试':
-            a = tkinter.messagebox.askokcancel('提示', '是否关闭自动考试', parent=self.frame_r)
+            a = tk.messagebox.askokcancel('提示', '是否关闭自动考试', parent=self.frame_r)
             if a:
                 self.kaoshi_ss = False
                 self.settings_s.config(text="已关闭自动考试")
@@ -826,7 +821,7 @@ class choa:
                 self.kaoshi_ss = True
                 self.settings_s.config(text="已开启自动考试")
         elif aca=='已关闭自动考试':
-            a = tkinter.messagebox.askokcancel('提示', '是否开启自动考试', parent=self.frame_r)
+            a = tk.messagebox.askokcancel('提示', '是否开启自动考试', parent=self.frame_r)
             if a:
                 self.kaoshi_ss = True
                 self.settings_s.config(text="已开启自动考试")
@@ -872,12 +867,12 @@ class choa:
     def shuake(self,TabStrip1__Tab1,speed_):
 
         self.speed_ = speed_
-        self.start_.config(text='正在初始化请稍等...',state=DISABLED)
+        self.start_.config(text='正在初始化请稍等...',state=tk.DISABLED)
         name = self.comboxlist.get()  # 课程名称
         ke_ar = self.comboxlist.current()  # 判断当前是否被选中课程
         speed = self.speed_.get().strip()  # 获取播放速度
         def kaishi(speed,title_name):
-            self.speed_.config(state=DISABLED)
+            self.speed_.config(state=tk.DISABLED)
             TabStrip1__Tab1.after(1000)
             item = self.chao_.huoqukecheng()
             for title,url1 in item.items():
@@ -898,7 +893,7 @@ class choa:
                     start_text = self.bofzhuangt_['text']
                     while isc > -1:
                         TabStrip1__Tab1.after(1000)
-                        self.start_.config(text='如果你的章节过多时间会很长' + str(isc), state=DISABLED)
+                        self.start_.config(text='如果你的章节过多时间会很长' + str(isc), state=tk.DISABLED)
                         TabStrip1__Tab1.update()
                         if self.bofzhuangt_['text']=="当前课程播放完毕":
                             break
@@ -915,17 +910,17 @@ class choa:
 
                     if a=="当前课程已经完成":
                         bofzhuangt_.config(text='当前课程播放完毕')
-                        tkinter.messagebox.showinfo('提示', '当前课程已完成')
+                        tk.messagebox.showinfo('提示', '当前课程已完成')
                         print('该课程视频题目已完成内容已完成')
-                        self.start_.config(text='开始刷课', state=NORMAL)
-                        self.speed_.config(state=NORMAL)
+                        self.start_.config(text='开始刷课', state=tk.NORMAL)
+                        self.speed_.config(state=tk.NORMAL)
                         return True
                     elif a=="":
                         print("977行")
 
                     if not self.sysTrayIcon.Isminmize:
                         self.bofzhuangt_['text'] = "已经开始刷课了"
-                        # tkinter.messagebox.showinfo('提示', '已经开始刷课了')
+                        # tk.messagebox.showinfo('提示', '已经开始刷课了')
 
                     if kaoshi:
                         # 开启刷视频章节测试和考试
@@ -937,9 +932,9 @@ class choa:
                     else:
                         # 只刷视频和章节测试
                         self.chao_.play_speed(speed_,a)
-                    tkinter.messagebox.showinfo('提示', '当前课程已完成')
-                    self.start_.config(text='开始刷课', state=NORMAL)
-                    self.speed_.config(state=NORMAL)
+                    tk.messagebox.showinfo('提示', '当前课程已完成')
+                    self.start_.config(text='开始刷课', state=tk.NORMAL)
+                    self.speed_.config(state=tk.NORMAL)
                 def tijiao_kecheng(data):
                     url_kecheng = self._jia()['url'] + '/shuake_urser_logo.php?action=registrered_course_name'
                     requests.post(url_kecheng, data,headers=self._jia()['headers'])
@@ -961,36 +956,36 @@ class choa:
                 TabStrip1__Tab1.update()
         # 弹出确认框
         def querenkuang():
-            a = tkinter.messagebox.askokcancel('提示', '你的播放速度较快建议1-10',parent=TabStrip1__Tab1)
+            a = tk.messagebox.askokcancel('提示', '你的播放速度较快建议1-10',parent=TabStrip1__Tab1)
             return a
         if ke_ar!=-1:
             try:
                 if int(speed)<100 and len(name)>0:
                     self.huoqukecheng_status.place(relx=0, rely=0, relwidth=0, relheight=0)  # 隐藏“成功获取到课程”
                 else:
-                    tkinter.messagebox.showinfo('提示', '速度飞起来，不怕封号吗？', parent=self.window)  # 提示框
-                    self.start_.config(text='开始刷课', state=NORMAL)
+                    tk.messagebox.showinfo('提示', '速度飞起来，不怕封号吗？', parent=self.window)  # 提示框
+                    self.start_.config(text='开始刷课', state=tk.NORMAL)
                     self.status.config(text='请选择课程和输入播放速度')
             except :
                 if len(speed)>0:
 
-                    tkinter.messagebox.showinfo('提示', '请输入正确的数字', parent=self.window)  # 提示框
-                    self.start_.config(text='开始刷课', state=NORMAL)
-                    self.speed_.config(state=NORMAL)
+                    tk.messagebox.showinfo('提示', '请输入正确的数字', parent=self.window)  # 提示框
+                    self.start_.config(text='开始刷课', state=tk.NORMAL)
+                    self.speed_.config(state=tk.NORMAL)
                 else:
-                    tkinter.messagebox.showinfo('提示', '请输入数字', parent=self.window)  # 提示框
-                    self.start_.config(text='开始刷课', state=NORMAL)
+                    tk.messagebox.showinfo('提示', '请输入数字', parent=self.window)  # 提示框
+                    self.start_.config(text='开始刷课', state=tk.NORMAL)
             title_name = self.comboxlist.get()
             if int(speed) > 11:
                 if querenkuang():
                     kaishi(speed,title_name)
                 else:
-                    self.start_.config(text='开始刷课', state=NORMAL)
+                    self.start_.config(text='开始刷课', state=tk.NORMAL)
             else:
                 kaishi(speed,title_name)
         else:
-            tkinter.messagebox.showinfo('提示', '请选择课程', parent=self.window)  # 提示框
-            self.start_.config(text='开始刷课', state=NORMAL)
+            tk.messagebox.showinfo('提示', '请选择课程', parent=self.window)  # 提示框
+            self.start_.config(text='开始刷课', state=tk.NORMAL)
     # 监控在线情况
     def monitor(self):
         while True:
@@ -1006,10 +1001,10 @@ class choa:
                         responsejson = requests.post(data['url']+'/shuake_urser_logo.php?action=Online',headers=data['headers'],data=data,timeout=20).json()
 
                         if responsejson['status'] == '404':
-                            tkinter.messagebox.showinfo('提示', '用户不存在', parent=self.TabStrip1)  # 提示框
+                            tk.messagebox.showinfo('提示', '用户不存在', parent=self.TabStrip1)  # 提示框
                             self.exitc()
                     except:
-                        tkinter.messagebox.showinfo('提示', '服务器故障', parent=self.TabStrip1)  # 提示框
+                        tk.messagebox.showinfo('提示', '服务器故障', parent=self.TabStrip1)  # 提示框
                         self.exitc()  # 关闭python
 
             except:
