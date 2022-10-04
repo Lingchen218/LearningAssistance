@@ -32,7 +32,6 @@ class chaoxing():
         try:
             busp = BeautifulSoup(requests.get('http://www.chaoxing.com/', timeout=5).text, 'html.parser')
         except Exception as e:
-            # tkinter.messagebox.showinfo('网络故障', e, parent=self.window)
             print("网络出现故障", e)
             return None
         url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
@@ -40,20 +39,12 @@ class chaoxing():
         header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
         }
-
-        content = js2py.EvalJs()
-        try:
-            with open('./js/chaoxinglogin.js', 'r', encoding='utf-8') as f:
-                content.execute(f.read())
-        except Exception as e:
-            print(456)
-            # tkinter.messagebox.showinfo('文件不存在', e, parent=self.TabStrip1)  # 提示框
-            return None
-        
+        des_obj = des("u2oh6Vu^", "u2oh6Vu^", pad=None, padmode=PAD_PKCS5)
+        secret_bytes = des_obj.encrypt(password, padmode=PAD_PKCS5)
         data = {
             'fid': '-1',
             'uname': str(user),
-            'password': content.encryptByDES(password, "u2oh6Vu^HWe40fj"),
+            'password': binascii.b2a_hex(secret_bytes).decode("utf-8"),
             't': 'true'
         }
         try:
@@ -78,15 +69,11 @@ class chaoxing():
                 self.headers = headers
                 return  True
             else:
-                masg = str(cookies.json()['msg2'])
-                # tkinter.messagebox.showinfo('提示', masg, parent=self.window)  # 提示框
-                print(456)
+
                 return False
-        except:
-            print(789)
-            pass
-            # tkinter.messagebox.showinfo('提示', '网络连接超时,请重新打开软件', parent=self.window)  # 提示框
-            # denglu_anniu.config(text='请重新登陆', state=NORMAL)
+        except Exception as e:
+            print("登录失败",e)
+
 
     def getheaders(self):
         return self.headers
@@ -137,6 +124,7 @@ class chaoxing():
         enc = re.findall(reg, html.text)[0]
         sudu = BeautifulSoup(html.text, 'html.parser').findAll('span', {'class': 'catalog_points_yi'})
         fe = {}
+        fe['cpi'] = cpi
         if len(sudu) > 0:
             for i, ii in zip(sudu, range(0, len(sudu))):  # 循环有多少没有任务点没有完成
                 a_ = i.parent.parent.parent
@@ -270,7 +258,7 @@ class chaoxing():
 
 
 
-    def goo_post(self, bofang, clazzId, userid, jobid, objectid, duration_, dtoken, otherInfo, name):
+    def goo_post(self, bofang, clazzId, userid, jobid, objectid, duration_, dtoken, otherInfo, name,**kwargs):
         print('正在播放', name+" ",bofang,"总时长" , duration_ )
         self.msgbox('正在播放: '+  name+" 已观看" + str(bofang) + "秒 总时长" + str(duration_) + "每隔60刷新一次，到完成时可能会重复几次")
         objectId = objectid
@@ -281,7 +269,10 @@ class chaoxing():
         zz = "[%s][%s][%s][%s][%s][%s][%s][%s]" % (
             clazzId, userid, jobid, objectId, currentTimeSec, zifu, duration, clipTime)
         enc = hashlib.md5(zz.encode()).hexdigest()
+        # print(str(kwargs.get('cpi')))
+
         url = 'https://'+self.host_url+'/multimedia/log/a/' + dtoken
+
         _t = int(time.time() * 1000)
         url_post = {
             'clazzId': clazzId,
@@ -330,7 +321,7 @@ class chaoxing():
                         userid = i1['uid']  # 用户ID
                         jobid = i1['jobid']
                         objectid = i1['objectid']
-
+                        cpi = fe['cpi']
                         dtoken = i1['dtoken']  # 提交用的
                         otherInfo = i1['otherInfo']
                         name = i1['name']
@@ -343,12 +334,12 @@ class chaoxing():
                                 while True:
                                     if self.goo_post(duration, clazzid, userid, jobid, objectid, duration,
                                                      dtoken,
-                                                     otherInfo, name):
+                                                     otherInfo, name,cpi=cpi):
                                         break
                                 break
                             else:
                                 if self.goo_post(bofang, clazzid, userid, jobid, objectid, duration, dtoken,
-                                                 otherInfo, name):
+                                                 otherInfo, name,cpi=cpi):
                                     print('播放完毕', name)
 
                                     break
