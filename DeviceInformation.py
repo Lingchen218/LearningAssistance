@@ -1,4 +1,4 @@
-
+# -- coding: utf-8 --
 import os,sys,base64
 import string,random
 class DeviceInformation:

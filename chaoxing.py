@@ -22,7 +22,7 @@ class chaoxing():
 
         self.jia = kwargs["_jia"]()
         self.host_url = None
-
+        self.logging = kwargs['logging']
         self.headers = None
     def __int__(self):
         pass
@@ -30,7 +30,7 @@ class chaoxing():
         try:
             busp = BeautifulSoup(requests.get('http://www.chaoxing.com/', timeout=5).text, 'html.parser')
         except Exception as e:
-            print("网络出现故障", e)
+            self.logging.error(e)
             return None
         url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
         logo_url = 'https://' + re.findall('//(.*?)/', url)[0] + '/fanyalogin'
@@ -68,7 +68,7 @@ class chaoxing():
 
                 return False
         except Exception as e:
-            print("登录失败",e)
+            self.logging.error(e)
 
 
     def getheaders(self):
@@ -83,7 +83,7 @@ class chaoxing():
 
             lilist = busp.findAll('div',{"class":"course-cover"})
         except Exception as e:
-            print('课程获取失败',e)
+            self.logging.error(e)
             return  {}
         kec = {}
         # self.host_url = re.findall('//(.*?)/',url)[0]
@@ -103,7 +103,7 @@ class chaoxing():
         self.host_url = re.findall(r'://(.*?)/',ke_cheng_url)[0]
 
 
-        url if url else print("没有找到返回地址")
+        url if url else self.logging.error("没有找到返回地址")
 
         reg = 'clazzid=(.*?)&'
         clazzid = re.findall(reg, url)[0]
@@ -255,7 +255,7 @@ class chaoxing():
 
 
     def goo_post(self, bofang, clazzId, userid, jobid, objectid, duration_, dtoken, otherInfo, name,**kwargs):
-        print('正在播放', name+" ",bofang,"总时长" , duration_ )
+        self.logging.info('正在播放'+ name+" " + str(bofang) + "总时长" + str(duration_) )
         self.msgbox('正在播放: '+  name+" 已观看" + str(bofang) + "秒 总时长" + str(duration_) + "每隔60刷新一次，到完成时可能会重复几次")
         objectId = objectid
         zifu = "d_yHJ!$pdA~5"
@@ -294,7 +294,7 @@ class chaoxing():
             url = requests.get(url, url_post, headers=self.headers)
             return url.json()['isPassed']
         except:
-            print("提交参数有误")
+            self.logging.error("提交参数有误")
             return False
     def play_speed(self, speed,fe):
         '''
@@ -336,14 +336,14 @@ class chaoxing():
                             else:
                                 if self.goo_post(bofang, clazzid, userid, jobid, objectid, duration, dtoken,
                                                  otherInfo, name,cpi=cpi):
-                                    print('播放完毕', name)
+                                    self.logging.info('播放完毕' + str(name))
 
                                     break
 
                             ic += 60
                             time.sleep(60)  # 等待 65秒
                 else:
-                    print('课程视频播放完毕')
+                    self.logging.info('课程视频播放完毕')
                 # 答题
                 if 'workid' in j:  # 答题
                     x = j['workid']
@@ -363,7 +363,7 @@ class chaoxing():
                     }
                     self.get_Answer(data_url,x['title'])
                 else:
-                    print('课程题目已完成')
+                    self.logging.info("课程题目已完成")
     def get_Answer(self, data_url,title):
         '''获取题目
         '''
@@ -371,7 +371,6 @@ class chaoxing():
         url = 'https://'+self.host_url+'/api/work'
         html = requests.get(url, params=data_url, headers=self.headers, allow_redirects=False).url
         url = requests.get(html, headers=self.headers, allow_redirects=False)
-        print(url.text)
         url = url.headers['Location']
         url = requests.get(url, headers=self.headers, allow_redirects=False).headers['Location']
         html = requests.get(url, headers=self.headers, allow_redirects=False).text
@@ -435,7 +434,7 @@ class chaoxing():
         if daan_op:
             self.Answer(url, daan_op)
         else:
-            print('未找到答案')
+            self.logging.info("未找到答案")
     def daoru(self, ti):
         '''
         把题目提交到数据库查询有无答案 如果有答案找出答案序号 ABCD
@@ -482,7 +481,7 @@ class chaoxing():
                         daan_op[j] = op[str(j)].lower()
                 return daan_op
         except Exception as e:
-            print("获取答案失败",e)
+            self.logging.warning("获取答案失败" + str(e))
             return False
     def Answer(self, url, daan, kaoshi=False):
         '''构建答题请求
@@ -535,14 +534,13 @@ class chaoxing():
             if busp.find('div', {'class': 'leftBottom'}).findAll('a')[2].get('class')[0] == 'saveYl01':
                 response = requests.post(dati_url[:-4], data=kaishi, headers=self.headers).json()
                 if response['status'] == 'error':
-                    print(response['msg'])  # 是设置了限时提交
+                    self.logging.warning(response['msg'])# 是设置了限时提交
                 elif response['status'] == 'success':
-                    print('提交成功，考试结束')
+                    self.logging.warning("提交成功，考试结束")
                 else:
-                    print('考试出现未知错误。请联系客服')
+                    self.logging.error("考试出现未知错误。请联系客服")
             else:
                 response = requests.post(dati_url, data=kaishi, headers=self.headers).json()
-                print(response)
                 st = re.findall('&start=(\d)', url)[0]
                 st_str = '&start=' + str(int(st) + 1)
                 url = re.sub('&start=' + st, st_str, url)
@@ -559,7 +557,6 @@ class chaoxing():
             tijiao_data.append(('enc_work', busp.findAll('input', {'id': 'enc_work'})[0].get('value')))
             tijiao_data.append(('userId', busp.findAll('input', {'id': 'userId'})[0].get('value')))
             answertype = busp.findAll('input', {'id': re.compile('answertype')})  # 题目id
-            print("正常")
             answer_id = []
             for i in range(0, len(answertype)):
                 answer_id.append(re.sub('answertype', '', answertype[i].get('id')))
@@ -602,10 +599,9 @@ class chaoxing():
                 try:
                     response = requests.post(url=get_dizhi, data=tijiao_data, headers=headers, allow_redirects=False).json()
                 except Exception as e:
-                    print('答题出错',e)
+                    self.logging.error("答题出错" + str(e))
             except Exception as e:
-                print(e)
-                print('此题可能已经完成')
+                self.logging.error("此题可能已经完成" + str(e))
     def jiekou_Answer(self, topic):
         url_data = {
             'question': topic
@@ -620,7 +616,7 @@ class chaoxing():
         daan_str = ''
         # for ji in daanneirong[0]['result'][0]['correct']:
         #     daan_str += ji['content']+'&'
-        print(daanneirong[0]['result'][0]['correct'][0]['content'])
+        # print(daanneirong[0]['result'][0]['correct'][0]['content'])
         url_post = 'http://106.13.35.129/tiku.aspx'
         data = {
             '__VIEWSTATE': '/wEPDwUKLTY1ODc5MTg4OA8WAh4TVmFsaWRhdGVSZXF1ZXN0TW9kZQIBZGQwN1lgu9fYSP3ApJzXKP3BoHXck7HigDcmSmbdYOHntw==',
@@ -672,7 +668,7 @@ class chaoxing():
         examId = ''
         for i in busp.findAll('li'):
             if i.findAll('strong')[0].get_text().strip() == "待做":
-                print('有考试')
+                self.logging.info("有考试")
                 examId += str(re.findall(',(.*?),', i.findAll('a', {'class': 'aBtn bRed_1'})[0].parent.findAll('a', {
                     'href': 'javascript:void(0)'})[0].get('onclick'))[0])
             elif i.findAll('strong')[0].get_text().strip() == "待重考":
@@ -691,9 +687,9 @@ class chaoxing():
                 url = re.sub('&source=0', '', url) + 'start=0'
                 self.kaoshi(url)
             except Exception as e:
-                print(e)
+                self.logging.error(str(e))
         else:
-            print('没有待做的考试')
+            self.logging.info("没有待做的考试")
     def kaoshi(self, url):
         '''
         拿去题目并传入题库中查询 返回答案如果没有就返回false
@@ -720,7 +716,7 @@ class chaoxing():
             for i in busp.find('ul', {'class': 'Cy_ulTop w-top'}).findAll('li'):
                 xuanxiang.append(i.div.a.p.get_text())
         else:
-            print('未知错误请联系客服')
+            self.logging.error("题目类型是" + str(topic_type) + " 未知错误请联系客服")
         aic = {}
         aic[0] = {
             'topic': anse,
@@ -730,9 +726,8 @@ class chaoxing():
         daan = self.daoru(aic)
         if daan:
             self.Answer(url, daan, True)
-            # print(daan)
         else:
-            print('没有找到答案')
+            self.logging.info("没有找到答案")
 if __name__=="__main__":
     # headers = chaoxinglogin('手机号','密码')
     #ke_cheng_url = "https://mooc1-1.chaoxing.com/visit/stucoursemiddle?courseid="

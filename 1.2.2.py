@@ -1,6 +1,7 @@
 # -- coding: utf-8 --
 
 import cProfile
+import logging
 
 import time,re,hashlib,webbrowser,requests,json,threading,tkinter.messagebox,tempfile
 from tkinter import ttk
@@ -17,8 +18,19 @@ from chaoxing import chaoxing
 os.environ['NO_PROXY'] = 'thenobleyou.com'  # 设置直接连接 不使用任何代理
 os.environ['NO_PROXY'] = 'chaoxing.com'
 version = '1.2.2'
+logsPathNam = './logs/error.log'
+a_diengyi = 0  # 如果等于1就说明登录成功
 describe = '本软件支持超星的全部刷课流程 本次更新为9月17日 软件修复若干bug 当前python版本' + platform.python_version()
-
+if not os.path.isdir(re.findall(r"/(.*)/",logsPathNam)[0]):  # 无文件夹时创建
+    os.makedirs(re.findall(r"/(.*)/",logsPathNam)[0])
+logging.basicConfig(level=logging.INFO,  # 设置级别，根据等级显示
+                    filename=logsPathNam,
+                    format='%(asctime)s-[%(filename)s-->line:%(lineno)d]-%(levelname)s:%(message)s')# 设置输出格式
+# logging.debug('This is a debug log')
+# logging.info('This is a debug info')
+# logging.warning('This is a warning log')
+# logging.error('This is a error log',456)
+# logging.critical('This is a critical log')
 class zhihuishu():
     def __init__(self,cookie):
         self.uuid = re.findall('%22%2C%22uuid%22%3A%22(.*?)%22',cookie)[0]
@@ -36,10 +48,10 @@ class zhihuishu():
         if response['result']['totalCount']!=0:
             for kecheng in response['result']['courseOpenDtos']:
                 k_c_name = kecheng['courseName']  # 课程名称
-                print('课程名称',k_c_name)
+                logging.warning('课程名称' + str(k_c_name))
         else:
 
-            print('没有课程，就去找 课程')
+            logging.warning('没有课程，就去找 课程')
             # 获取学校id
             url = 'https://onlineservice.zhihuishu.com/student/home/index/getCertificateInfo?uuid={}'.format(self.uuid)
             school_id = requests.get(url,headers=self.headers).json()['result']['schoolId']
@@ -51,7 +63,7 @@ class zhihuishu():
             # huod = requests.get(url,params=params,headers=self.headers).json()['result']
             # for ke_c in huod:
             #     print(ke_c)
-a_diengyi = 0  # 如果等于1就说明登录成功
+
 class choa:
     def __init__(self,iswangluo):
         self.ifc_file = './Bpp3.ico'
@@ -96,7 +108,7 @@ class choa:
         if not os.path.isfile(self.filename):  # 无文件时创建
             fd = open(self.filename, mode="w", encoding="utf-8")
             fd.close()
-        with open(self.filename) as f:
+        with open(self.filename, mode='r',encoding="utf-8") as f:
             try:
 
                 a = json.loads(f.read())
@@ -187,7 +199,7 @@ class choa:
     def exit(self, _sysTrayIcon = None):
 
         if messagebox.askokcancel("退出", "退出后无法刷课?"):
-            print ('exit...')
+            logging.warning('exit...')
             try:
                 os.remove('Bpp3.ico')
             except:
@@ -388,7 +400,7 @@ class choa:
     def saveuserpass(self,user,password):
         self.user_xinxi = user
         self.user_pass = password
-        with open(self.filename, 'w') as f:
+        with open(self.filename, 'w',encoding='utf-8') as f:
             s = {'uid': user, 'passwd':password }
             f.write(json.dumps(s))
 
@@ -435,7 +447,7 @@ class choa:
                 t1.start()
             else:
                 tk.messagebox.showinfo('提示', '请输入正确的账号密码',parent=self.TabStrip1)  # 提示框
-                print('请输入正确的账号密码')
+                logging.warning("请输入正确的账号密码")
     # 验证邮箱地址是否正确
     def enmail_yanz(self,email):
         if re.match("^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$", str(email).strip())!=None:
@@ -620,7 +632,7 @@ class choa:
                         resp = respon.json()
 
                         if resp.get("status",None) == '1':
-                            print('邮件发送成功')
+                            logging.info('邮件发送成功')
                         elif resp.get('error',None) == '255':
                                 self.update()
                                 self.time = 1
@@ -662,12 +674,12 @@ class choa:
         status.config(text='正在登录')
         bloginsuccess = False
         if type_int==0:
-            self.chao_ = chaoxing(_jia=self._jia)
+            self.chao_ = chaoxing(_jia=self._jia,logging=logging)
             bloginsuccess = self.chao_.login(user,password)
         elif type_int==1:
             # self.headers = self.zhihui_login(user,password)
             self.headers = False
-            print('智慧树登录开发中')
+            logging.info('智慧树登录开发中')
 
 
         if bloginsuccess:
@@ -768,7 +780,6 @@ class choa:
         
         response = requests.post(url_login,headers=headers,data=data,allow_redirects=False).headers
         if 'Location' in response:
-            print(response['Location'])
             if response['Location']=='https://www.zhihuishu.com':
                 return response['Set-Cookie']
             else:
@@ -783,12 +794,12 @@ class choa:
 
         if not self.sysTrayIcon.Isminmize:
 
-            # print("显示")
+            logging.info("显示")
             self.listxiaox.append(msgstr)
             self.OnwinShow()
         else:
             self.listxiaox.append(msgstr)
-            print("最小化到后台了隐藏")
+            logging.info("最小化到后台了隐藏")
             return None
     def OnwinShow(self,lparam=None):
 
@@ -911,12 +922,12 @@ class choa:
                     if a=="当前课程已经完成":
                         bofzhuangt_.config(text='当前课程播放完毕')
                         tk.messagebox.showinfo('提示', '当前课程已完成')
-                        print('该课程视频题目已完成内容已完成')
+                        logging.info("该课程视频题目已完成内容已完成")
                         self.start_.config(text='开始刷课', state=tk.NORMAL)
                         self.speed_.config(state=tk.NORMAL)
                         return True
                     elif a=="":
-                        print("977行")
+                        logging.info("章节获取为空")
 
                     if not self.sysTrayIcon.Isminmize:
                         self.bofzhuangt_['text'] = "已经开始刷课了"
@@ -950,7 +961,7 @@ class choa:
                     t.daemon = True
                     t.start()
             except Exception as f:
-                print("有错误1011")
+                logging.error(f)
                 TabStrip1__Tab1.after(1000)
                 self.bofzhuangt_.config(text='连接服务失败')
                 TabStrip1__Tab1.update()

@@ -92,7 +92,6 @@ class SysTrayIcon(object):
 
         if lparam == win32con.WM_LBUTTONUP:  # 左键弹起
             s.OnWinShow()
-            print("打开了")
             s.Isminmize = False  # 最小化为真
         if lparam == win32con.WM_LBUTTONDBLCLK:  # 双击左键
             pass  # s.execute_menu_option(s.default_menu_index + s.FIRST_ID)
