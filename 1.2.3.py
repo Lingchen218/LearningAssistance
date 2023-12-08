@@ -15,6 +15,10 @@ from SysTrayIcon import *
 from tkinter.ttk import *
 from chaoxing import chaoxing
 from Imager.Imager import getIcon
+import nest_asyncio
+nest_asyncio.apply()
+import aiohttp
+
 os.environ['NO_PROXY'] = 'thenobleyou.com'  # 设置直接连接 不使用任何代理
 os.environ['NO_PROXY'] = 'chaoxing.com'
 version = '1.2.3'
@@ -67,6 +71,7 @@ class choa:
     def __init__(self,iswangluo):
         self.loop = asyncio.get_event_loop()
         self.ifc_file = './Bpp3.ico'
+        self.defaultesaveconfig = '\config\config.ini'
         self.kaoshi_ss = False  # 是否开启考试
         # 日志消息列表
         self.listxiaox = []
@@ -101,7 +106,7 @@ class choa:
         tmpfd, tempfilename = tempfile.mkstemp()
         os.close(tmpfd)
         os.unlink(tempfilename)
-        self.filename = tempfile.tempdir + '\\' + self.data_json['keysalt'] + '\config\config.ini'
+        self.filename = tempfile.tempdir + '\\' + self.data_json['keysalt'] + self.defaultesaveconfig
         path = self.filename[0:self.filename.rfind("\\")]
         if not os.path.isdir(path):  # 无文件夹时创建
             os.makedirs(path)
@@ -308,7 +313,7 @@ class choa:
 
     # 软件更新
     def update(self):
-        url = 'http://blog.thenobleyou..com/shuake_urser_logo.php?action=registrered_update'
+        url = 'http://blog.thenobleyou.com/shuake_urser_logo.php?action=registrered_update'
         if self._jia()['version_']:
             tk.messagebox.showinfo('提示', '已是最新版本')  # 提示框
         else:
@@ -598,15 +603,12 @@ class choa:
 
     def captchatcount(self,url1):
         # 单击按钮调用该方法
-
         after = self.fasong.after(1000, func=lambda:self.captchatcount(url1))
         # 调用一次时间减一
         self.fasong['text'] = self.time
         # 延时1秒在此调用该方法
         self.time -= 1
-
         # 将按钮的文本设为倒计时时间
-
         self.fasong['state'] = 'disable'
         # 禁用按钮
         if int(self.fasong['text']) == self.time1:
@@ -619,7 +621,7 @@ class choa:
                     respon = requests.post(url, data, headers=data['headers'])
 
                     try:
-
+                        print(respon.text)
                         resp = respon.json()
 
                         if resp.get("status",None) == '1':
@@ -643,14 +645,16 @@ class choa:
                                 atext = '未知错误'
                             tk.messagebox.showinfo('提示', atext, parent=self.windowregret)  # 提示框
                             self.time = 1
-                    except:
+                    except Exception as e:
+                        logging.error(e)
+                        logging.error(respon.text)
                         tk.messagebox.showinfo('提示', '服务器故障', parent=self.windowregret)  # 提示框
                 else:
                     self.time = 1
                     tk.messagebox.showinfo('提示', '邮箱输入错误', parent=self.windowregret)
 
             self.th((emailsendcode,))
-        elif self.time == 0:
+        elif self.time <= 0:
             # 倒计时结束
             self.time = self.time1
             # 重置倒计时时间
@@ -659,7 +663,6 @@ class choa:
             self.fasong['text'] = '重新发送'
             # 将按钮文本设为重新发送
             self.fasong.after_cancel(after)
-
     # 软件超星登录
     def chao(self,user,password,type_int,denglu_anniu,status,TabStrip1__Tab1):  # 登录超星页面点击录按钮触发
         status.config(text='正在登录')
@@ -672,9 +675,7 @@ class choa:
             self.headers = False
             logging.info('智慧树登录开发中')
 
-
         if bloginsuccess:
-
             status.config(text='登录成功')
             for widget in TabStrip1__Tab1.winfo_children():
                 widget.destroy()
