@@ -570,7 +570,9 @@ class choa:
                                 tk.messagebox.showinfo('提示', '请更新软件',parent=self.windowregret)
                                 self.update()
                             elif resp['error']=='256':
-                                tk.messagebox.showinfo('提示', '验证码失效',parent=self.windowregret)
+                                tk.messagebox.showinfo('提示', '验证码错误',parent=self.windowregret)
+                            else:
+                                tk.messagebox.showinfo('提示', resp.get("msg","默认错误信息"), parent=self.windowregret)
                         else:
                             tk.messagebox.showinfo('提示', '密码太弱了',parent=self.windowregret)
                     else:

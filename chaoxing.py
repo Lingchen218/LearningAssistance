@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 from pyDes import des, PAD_PKCS5
 import binascii
-version = '1.2.2'
+version = '1.2.3'
 
 
 
@@ -125,8 +125,9 @@ class chaoxing():
             for i, ii in zip(sudu, range(0, len(sudu))):  # 循环有多少没有任务点没有完成
                 a_ = i.parent.parent.parent
                 if a_.a:
-                    a_ = a_.a
-                name = a_.findAll('div', {'class': 'catalog_name'})[0].text.strip()  # 视频的名称
+                    name = a_.a.text.strip()
+                else:
+                    name = a_.findAll('a', {'class': 'clicktitle'})[0].text.strip()  # 视频的名称
                 msgbox("添加到准备列表中   " + name)  # 输入用户日志
                 str_usr = a_.parent.get('onclick')  # 进入播放页面的url
                 reg = "'(.*?)'"
