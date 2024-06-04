@@ -67,7 +67,7 @@ class zhihuishu():
             # for ke_c in huod:
             #     print(ke_c)
 
-class choa:
+class chao:
     def __init__(self,iswangluo):
         self.loop = asyncio.get_event_loop()
         self.ifc_file = './Bpp3.ico'
@@ -433,7 +433,11 @@ class choa:
             Button(TabStrip1__Tab1, text='关闭', command=lambda: TabStrip1__Tab1.destroy()).place(relx=0.65, rely=0.1, relwidth=0.1,relheight=0.05)
             self.TabStrip1.add(TabStrip1__Tab1, text=title_text)  # 标题
         b('超星账号','超星密码','超星、学习通、雅尔',0)
-        b('智慧树账号', '智慧树密码','智慧树',1)
+        # b('智慧树账号', '智慧树密码','智慧树',1)
+        b('超星账号1','超星密码','超星、学习通、雅尔',0)
+        b('超星账号2', '超星密码', '超星、学习通、雅尔', 0)
+        b('超星账号3', '超星密码', '超星、学习通、雅尔', 0)
+        b('超星账号4', '超星密码', '超星、学习通、雅尔', 0)
         def a(user,password,type_int,denglu_anniu,status,TabStrip1__Tab1):
 
             if len(user)>5 and len(password)>5:
@@ -697,7 +701,7 @@ class choa:
                 self.huoqukecheng_status['text'] = "获取课程失败"
             self.huoqukecheng_status.place(relx=0.35, rely=0.1, relwidth=0.2, relheight=0.05)
             kecheng = []
-            for i, isd in kec.items():
+            for isd in kec.values():
                 for s, c in isd.items():
                     kecheng.append(s)
             kecheng = tuple(kecheng)
@@ -880,7 +884,8 @@ class choa:
             self.speed_.config(state=tk.DISABLED)
             TabStrip1__Tab1.after(1000)
             item = self.chao_.huoqukecheng()
-            for title,url1 in item.items():
+
+            for url1 in item.values():
                 if title_name in url1:
                     url = (url1[title_name])
                     break
@@ -890,8 +895,8 @@ class choa:
             data['clazzid'] = clazzid  # 课程的id
             data['kecheng_name'] = kecheng_name  # 课程的名字
             data['mima'] = str(self.mima)  # 本系统的用户名
-
-            data['uid'] = self.chao_.getheaders()['Cookie']  # 超星的用户id
+            data['uid'] = self.chao_.GetCookies().get("UID",None)  # 超星的用户id
+            # self.chao_.
             try:
 
                 def dengdai(isc):
@@ -1026,7 +1031,7 @@ if __name__=="__main__":
         Iswangluo = False
 
 
-    Main = choa(Iswangluo)
+    Main = chao(Iswangluo)
     asyncio.run(Main.main())
 
     # cProfile.run('Main.main()')

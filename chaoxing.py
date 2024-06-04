@@ -5,9 +5,40 @@ import requests,re,json,hashlib,time
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from pyDes import des, PAD_PKCS5
+import pyaes
+import base64
 import binascii
 version = '1.2.3'
 
+
+def pkcs7_padding(s, block_size=16):
+    bs = block_size
+    return s + (bs - len(s) % bs) * chr(bs - len(s) % bs).encode()
+
+def split_to_data_blocks(byte_str, block_size=16):
+    length = len(byte_str)
+    j, y = divmod(length, block_size)
+    blocks = []
+    shenyu = j * block_size
+    for i in range(j):
+        start = i * block_size
+        end = (i + 1) * block_size
+        blocks.append(byte_str[start:end])
+    stext = byte_str[shenyu:]
+    if stext:
+        blocks.append(stext)
+    return blocks
+
+def encrypt(plaintext: str):
+    ciphertext = b''
+
+    cbc = pyaes.AESModeOfOperationCBC("u2oh6Vu^HWe4_AES".encode("utf8"), "u2oh6Vu^HWe4_AES".encode("utf8"))
+    plaintext = plaintext.encode('utf-8')
+    blocks = split_to_data_blocks(pkcs7_padding(plaintext))
+    for b in blocks:
+        ciphertext = ciphertext + cbc.encrypt(b)
+    base64_text = base64.b64encode(ciphertext).decode("utf8")
+    return base64_text
 
 
 class chaoxing():
@@ -23,61 +54,102 @@ class chaoxing():
         self.jia = kwargs["_jia"]()
         self.host_url = None
         self.logging = kwargs['logging']
-        self.headers = None
+
+        self._session = None
+
     def __int__(self):
         pass
     def login(self,user,password):
+        self._session = requests.session()
+
+        # 初始化heade 的 user-agent
+        self._session.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
+            "Sec-Ch-Ua": '"Chromium";v="118", "Google Chrome";v="118", "Not=A?Brand";v="99"',
+        }
+
+
         try:
-            busp = BeautifulSoup(requests.get('http://www.chaoxing.com/', timeout=5).text, 'html.parser')
+            busp = BeautifulSoup(self._session.get('http://www.chaoxing.com/', timeout=5).text, 'html.parser')
         except Exception as e:
             self.logging.error(e)
             return None
         url = busp.find('p', {'class': 'loginbefore'}).a.get('href')
         logo_url = 'https://' + re.findall('//(.*?)/', url)[0] + '/fanyalogin'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36',
-        }
-        des_obj = des("u2oh6Vu^", "u2oh6Vu^", pad=None, padmode=PAD_PKCS5)
-        secret_bytes = des_obj.encrypt(password, padmode=PAD_PKCS5)
+
+
         data = {
             'fid': '-1',
-            'uname': str(user),
-            'password': binascii.b2a_hex(secret_bytes).decode("utf-8"),
-            't': 'true'
+            'uname': encrypt(user),
+            'password': encrypt(password),
+            't': True,
+            "refer": "https%3A%2F%2Fi.chaoxing.com",
+            "forbidotherlogin": 0,
+            "validate": "",
+            "doubleFactorLogin": 0,
+            "independentId": 0
         }
         try:
-            cookies = requests.post(logo_url, headers=headers, data=data, timeout=10)
-            if cookies.json()['status']:
-                _uid = '_uid=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                _d = '_d=' + re.findall('_d=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                vc = 'vc=' + re.findall('vc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                vc2 = 'vc2=' + re.findall('vc2=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                vc3 = 'vc3=' + re.findall('vc3=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                UID = 'UID=' + re.findall('_uid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                uf = 'uf=' + re.findall('uf=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                fid = 'fid=' + re.findall('fid=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                JSESSIONID = 'JSESSIONID=' + re.findall('JSESSIONID=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                xxtenc = 'xxtenc=' + re.findall('xxtenc=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-                DSSTASH_LOG = 'DSSTASH_LOG=' + re.findall('DSSTASH_LOG=(.*?);', cookies.headers['Set-Cookie'])[0] + ';'
-
-                headers['Cookie'] = _uid + _d + vc3 + vc + vc2 + UID + uf + fid + JSESSIONID + xxtenc + DSSTASH_LOG
-
-                self.headers = headers
-                return  True
+            response = self._session.post(logo_url,  data=data, timeout=10)
+            if response.json()["status"] == True:
+                return True
             else:
-
+                error = {
+                    "chaoxing":response.json(),
+                    "用户名":"用户名或密码错误"
+                }
+                self.logging.error(error)
                 return False
         except Exception as e:
             self.logging.error(e)
+            return False
 
 
     def getheaders(self):
-        return self.headers
+        return self._session.headers
+    def GetCookies(self):
+        return self._session.cookies
     def huoqukecheng(self):
-
+        # 旧接口
         indexs_url = 'https://mooc2-ans.chaoxing.com/mooc2-ans/visit/courses/list'
+
+        # 新接口post
+        courselistdata_posturl = "https://mooc2-ans.chaoxing.com/mooc2-ans/visit/courselistdata"
+        _data = {
+            "courseType": 1,
+            "courseFolderId": 0,
+            "query": "",
+            "superstarClass": 0
+        }
+
+        _resp = self._session.post(courselistdata_posturl, data=_data)
+
+        #  解析 html
+
+        _soup = BeautifulSoup(_resp.text, "lxml")
+        _raw_courses = _soup.select("#stuNormalCourseListDiv div")
+        _course_list = list()
+        for course in _raw_courses:
+            if not course.select_one("a.not-open-tip"):
+                _course_detail = {}
+                if (course.attrs.get("id", None) == None):
+                    continue
+                _course_detail["id"] = course.attrs["id"]
+                _course_detail["info"] = course.attrs["info"]
+                _course_detail["roleid"] = course.attrs["roleid"]
+                _course_detail["clazzId"] = course.select_one("input.clazzId").attrs["value"]
+                _course_detail["courseId"] = course.select_one("input.courseId").attrs["value"]
+                _course_detail["cpi"] = re.findall("cpi=(.*?)&", course.select_one("a").attrs["href"])[0]
+                _course_detail["title"] = course.select_one("span.course-name").attrs["title"]
+                _course_detail["desc"] = course.select_one("p.margint10").attrs["title"]
+                _course_detail["teacher"] = course.select_one("p.color3").attrs["title"]
+                _course_list.append(_course_detail)
+        #  解析结束 html
+
+
+
         try:
-            response = requests.get(indexs_url, headers=self.headers)
+            response = self._session.get(indexs_url)
 
             busp = BeautifulSoup(response.text,'html.parser')
 
@@ -85,6 +157,11 @@ class chaoxing():
         except Exception as e:
             self.logging.error(e)
             return  {}
+
+
+
+
+
         kec = {}
         # self.host_url = re.findall('//(.*?)/',url)[0]
         for i, ii in zip(lilist, range(0, len(lilist))):
@@ -99,7 +176,7 @@ class chaoxing():
         self.ke_cheng_url = ke_cheng_url
         reg = 'courseid=(.*?)&'
         courseid = re.findall(reg, ke_cheng_url)[0]
-        url = requests.get(ke_cheng_url, headers=self.headers, allow_redirects=False).headers['Location']
+        url = self._session.get(ke_cheng_url, allow_redirects=False).headers['Location']
         self.host_url = re.findall(r'://(.*?)/',ke_cheng_url)[0]
 
 
@@ -115,7 +192,7 @@ class chaoxing():
             'cpi': cpi
         }
         url = 'https://mooc2-ans.chaoxing.com/mycourse/studentcourse'
-        html = requests.get(url, params=url_data, headers=self.headers, allow_redirects=False)
+        html = self._session.get(url, params=url_data,  allow_redirects=False)
         reg = 'var enc = "(.*?)";'
         enc = re.findall(reg, html.text)[0]
         sudu = BeautifulSoup(html.text, 'html.parser').findAll('span', {'class': 'catalog_points_yi'})
@@ -143,12 +220,26 @@ class chaoxing():
                     clazzid) + '&ut=s&refer=' + url
                 reg = 'https://fystat-ans.chaoxing.com/log/setlog\?personid=(.*?)&'
                 url_dtoken = url
-                html_bof = requests.get(url_dtoken, headers=self.headers, allow_redirects=False).headers[
-                    'Location']  # 进入播放页面
-                html_bof = requests.get(html_bof, headers=self.headers).text
-                dtoken_ = re.findall(reg, html_bof)[0]  # 取得视频播放需要的参数
+                try:
+                    html_bof = self._session.get(url_dtoken,  allow_redirects=False).headers[
+                        'Location']  # 进入播放页面
+                    # print("44",html_bof)
+                    response_ = self._session.get(html_bof, )
+                    if response_.status_code != 200:
+                        continue
+                    dtoken_ = re.findall(reg, response_.text)[0]  # 取得视频播放需要的参数
+                except Exception as e:
+                    pass
+                    # print(html_bof)
+                    # print(e)
+                    # print(html_bof)
+
                 reg = 'utEnc="(.*?)"'
-                utEnc = re.findall(reg, html_bof)[0]  # 自动答题需要
+                utEnc = re.findall(reg, response_.text)  # 自动答题需要
+                if not utEnc:
+                    # 权限不足，接口变更
+                    continue
+                utEnc = utEnc[0]
                 reg = 'chapterId=(.*?)&courseId=(.*?)&clazzid=(.*?)&'
                 # knowledgeid, courseId, clazzid = re.findall(reg, str_usr)[0]  # 返回播放视频需要的参数
                 knowledgeid = knowledgeId
@@ -163,7 +254,7 @@ class chaoxing():
                         'knowledgeid': knowledgeid,
                         'num': num,
                     }
-                    html = requests.get(url, data_url, headers=self.headers).text
+                    html = self._session.get(url, params=data_url).text
                     reg = 'mArg = ([{][\s\S.]*?);'
                     mArg = re.findall(reg, html)
                     # print(mArg[0])
@@ -185,10 +276,14 @@ class chaoxing():
                                             'flag': 'normal',
                                             # 'k':'29619' # 学习ID 暂时用不上
                                         }
-                                        self.headers['Referer'] = 'https://' + self.host_url
-                                        req = requests.get(urls, params=params, headers=self.headers, timeout=10).json()
+                                        self.getheaders()['Referer'] = 'https://' + self.host_url
 
-                                        uid = re.findall('_uid=(.*?);', self.headers['Cookie'])[0]
+
+                                        req = self._session.get(urls, params=params,  timeout=10).json()
+
+
+
+                                        uid = self.GetCookies().get("UID",None)
                                         ship_ = {}
                                         daand = {}
                                         daand[j] = {'clazzid': clazzid,
@@ -242,7 +337,7 @@ class chaoxing():
                                             'jtoken': attachments['jtoken'],
                                             '_dc': int(time.time() * 1000)
                                         }
-                                        respon = requests.get(url, params=data, headers=self.headers,
+                                        respon = self._session.get(url, params=data,
                                                               allow_redirects=False).url
                             else:
                                 break
@@ -292,7 +387,7 @@ class chaoxing():
 
         try:
 
-            url = requests.get(url, url_post, headers=self.headers)
+            url = self._session.get(url, url_post)
             return url.json()['isPassed']
         except:
             self.logging.error("提交参数有误")
@@ -370,11 +465,11 @@ class chaoxing():
         '''
         # self.bofzhuangt_.config(text='正在答题  '+title)
         url = 'https://'+self.host_url+'/api/work'
-        html = requests.get(url, params=data_url, headers=self.headers, allow_redirects=False).url
-        url = requests.get(html, headers=self.headers, allow_redirects=False)
+        html = self._session.get(url, params=data_url,  allow_redirects=False).url
+        url = self._session.get(html,  allow_redirects=False)
         url = url.headers['Location']
-        url = requests.get(url, headers=self.headers, allow_redirects=False).headers['Location']
-        html = requests.get(url, headers=self.headers, allow_redirects=False).text
+        url = self._session.get(url,  allow_redirects=False).headers['Location']
+        html = self._session.get(url,  allow_redirects=False).text
         busp = BeautifulSoup(html, 'html.parser')
         sudo = busp.findAll('div', {'class': 'TiMu'})  # 题目的数量
         ti = {}
@@ -458,7 +553,7 @@ class chaoxing():
 
         url = self.jia['url']+'/shuake_urser_logo.php?action=topic'
         self.jia['topic'] = topic
-        op = requests.post(url, data=self.jia, timeout=25,headers=self.jia['headers'])  # 答案
+        op = self._session.post(url, data=self.jia, timeout=25)  # 答案
         try:
             op = op.json()
             if op['0'] == '': # 没有答案
@@ -490,7 +585,7 @@ class chaoxing():
         daan 是服务器返回的答案
         kaoshi  默认是打章节测试的题目 如果是true就是 考试自动答题
         '''
-        busp = BeautifulSoup(requests.get(url, headers=self.headers).text, 'html.parser')
+        busp = BeautifulSoup(self._session.get(url).text, 'html.parser')
         # 进入考试自动答题
         if kaoshi:
             duoxuanti = 0
@@ -533,7 +628,7 @@ class chaoxing():
             kaishi.append((score, busp.findAll('input', {'name': score})[0].get('value')))
             kaishi.append(('type' + score[5:], busp.findAll('input', {'name': 'type' + score[5:]})[0].get('value')))
             if busp.find('div', {'class': 'leftBottom'}).findAll('a')[2].get('class')[0] == 'saveYl01':
-                response = requests.post(dati_url[:-4], data=kaishi, headers=self.headers).json()
+                response = self._session.post(dati_url[:-4], data=kaishi).json()
                 if response['status'] == 'error':
                     self.logging.warning(response['msg'])# 是设置了限时提交
                 elif response['status'] == 'success':
@@ -541,7 +636,7 @@ class chaoxing():
                 else:
                     self.logging.error("考试出现未知错误。请联系客服")
             else:
-                response = requests.post(dati_url, data=kaishi, headers=self.headers).json()
+                response = self._session.post(dati_url, data=kaishi).json()
                 st = re.findall('&start=(\d)', url)[0]
                 st_str = '&start=' + str(int(st) + 1)
                 url = re.sub('&start=' + st, st_str, url)
@@ -591,14 +686,14 @@ class chaoxing():
 
             url_data = {'classId': busp.findAll('input', {'id': 'classId'})[0].get('value'),'courseId': busp.findAll('input', {'id': 'courseId'})[0].get('value'),'_': self.jia['time']}
             url22 = 'https://'+self.host_url+'/work/validate'
-            json = requests.get(url22, params=url_data, headers=self.headers).json()
+            json = self._session.get(url22, params=url_data).json()
             # 构建get请求
             get_dizhi = 'https://'+self.host_url+'/work/' + busp.findAll('form', {'id': 'form1'})[0].get('action')
             headers = self.headers
             headers['Content-Type'] = 'application/x-www-form-urlencoded'
             try:
                 try:
-                    response = requests.post(url=get_dizhi, data=tijiao_data, headers=headers, allow_redirects=False).json()
+                    response = self._session.post(url=get_dizhi, data=tijiao_data,  allow_redirects=False).json()
                 except Exception as e:
                     self.logging.error("答题出错" + str(e))
             except Exception as e:
@@ -612,7 +707,7 @@ class chaoxing():
         data = {
             'topic[0]': '在公务信函里,署名宜为写信者全名。必要时,亦可同时署上其行政职务与职称、学衔。',
         }
-        response = requests.post(url_post, data=data).json()
+        response = self._session.post(url_post, data=data).json()
         daanneirong = response
         daan_str = ''
         # for ji in daanneirong[0]['result'][0]['correct']:
@@ -652,8 +747,8 @@ class chaoxing():
 
         # 进入考试需要的url
         # 拿到课程的url 然后进入考试查看有没有考试
-        response = requests.get(self.ke_cheng_url, headers=self.headers,allow_redirects=False).headers['Location']
-        response = requests.get(response, headers=self.headers, allow_redirects=False)
+        response = self._session.get(self.ke_cheng_url,allow_redirects=False).headers['Location']
+        response = self._session.get(response,  allow_redirects=False)
         url = BeautifulSoup(response.text, 'html.parser').findAll('a', {'mode': 'yiji'})[1].get('data')
         classId = re.findall('classId=(.*?)&', url)[0]
         courseId = re.findall('courseId=(.*?)&', url)[0]
@@ -662,7 +757,7 @@ class chaoxing():
             'courseId': courseId
         }
         url = 'https://'+re.findall('//(.*?)/', self.ke_cheng_url)[0] + url
-        response = requests.get(url, headers=self.headers, allow_redirects=False)
+        response = self._session.get(url,  allow_redirects=False)
         busp1 = BeautifulSoup(response.text, 'html.parser')
         cpi = busp1.findAll('input', {'name': 'cpi'})[0].get('value')
         busp = busp1.findAll('div', {'class': 'ulDiv'})[0].ul
@@ -680,7 +775,7 @@ class chaoxing():
             url_data_yem['cpi'] = cpi
             url = 'https://mooc1-api.chaoxing.com/exam/phone/start'
             try:
-                url = re.sub('&isphone=true', '', requests.get(url, params=url_data_yem, headers=self.headers,allow_redirects=False).headers['Location'])  # 进入考试 # 如果进入不了看看时间或者另一场考试没有停止
+                url = re.sub('&isphone=true', '', self._session.get(url, params=url_data_yem, allow_redirects=False).headers['Location'])  # 进入考试 # 如果进入不了看看时间或者另一场考试没有停止
                 # 考试开始
                 url = re.sub('protocol_v=1#INNER', '', url)
                 url = re.sub('&ut=s', '', url)
@@ -698,7 +793,7 @@ class chaoxing():
         :return:
         '''
 
-        response = requests.get(url, headers=self.headers).text  # 进入考试
+        response = self._session.get(url).text  # 进入考试
         busp = BeautifulSoup(response, 'html.parser')
         ccs = 0
         topic_type = ''
