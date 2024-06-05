@@ -8,6 +8,10 @@ requests pywin32 js2py BeautifulSoup4 pyDes
 
 视频倍速播放，比如视频100分钟，速度设置50，视频播放是前面50分钟时正常速度，到了50分钟的时候直接发送完成请求，结束视频播放自动跳到下一个视频
 
+初始化 python3.9.10
+
+pip3 install -r requirements.txt
+
 打包方式
 _**pyinstaller -F -w -i  .\images\Bpp3.ico .\1.2.3.py -n ./1.2.3输出名称.exe**_
 
