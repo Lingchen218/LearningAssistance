@@ -2,6 +2,7 @@
 
 import cProfile
 import logging
+import logging.handlers
 import asyncio
 import time,re,hashlib,webbrowser,requests,json,threading,tkinter.messagebox,tempfile
 from tkinter import ttk
@@ -22,16 +23,53 @@ import aiohttp
 os.environ['NO_PROXY'] = 'thenobleyou.com'  # 设置直接连接 不使用任何代理
 os.environ['NO_PROXY'] = 'chaoxing.com'
 version = '1.2.3'
-logsPathNam = './logs/error.log'
+logsPathNam = './logs/app.log'
+#
 a_diengyi = 0  # 如果等于1就说明登录成功
-if not os.path.isdir(re.findall(r"/(.*)/",logsPathNam)[0]):  # 无文件夹时创建
-    os.makedirs(re.findall(r"/(.*)/",logsPathNam)[0])
-logging.basicConfig(level=logging.INFO,  # 设置级别，根据等级显示
-                    filename=logsPathNam,
-                    format='%(asctime)s-[%(filename)s-->line:%(lineno)d]-%(levelname)s:%(message)s')# 设置输出格式
+# if not os.path.isdir(re.findall(r"/(.*)/",logsPathNam)[0]):  # 无文件夹时创建
+#     os.makedirs(re.findall(r"/(.*)/",logsPathNam)[0])
+# 获得当前时间时间戳
+now = int(time.time())
+#转换为其他日期格式,如:"%Y-%m-%d %H:%M:%S"
+timeArray = time.localtime(now)
+# otherStyleTime = time.strftime("%Y-%m-%d-%H-%M-%S", timeArray)
+# lognewname  = "."+logsPathNam.strip("error.log") + "log_"+ otherStyleTime +".txt"
+# print(lognewname)
+
+
+
+# if os.path.isfile(logsPathNam):
+#     os.rename(logsPathNam, lognewname)
+
+# logging.basicConfig(level=logging.DEBUG,  # 设置级别，根据等级显示
+#                     # filename=logsPathNam,
+#
+#                     format='%(asctime)s-[%(filename)s-->line:%(lineno)d]-%(levelname)s:%(message)s')# 设置输出格式
+logger  = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+# 控制台输出
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(formatter)
+consoleHandler.setLevel(logging.DEBUG)
+
+# 滚动文件输出
+loghandler = logging.handlers.RotatingFileHandler(logsPathNam, maxBytes=5 * 1024 * 1024, backupCount=100,encoding="utf-8")
+loghandler.setFormatter(formatter)
+
+
+logger.addHandler(loghandler)
+logger.addHandler(consoleHandler)
+# handlerHandler = logging.FileHandler("log.txt")
+# logger.addHandler(handlerHandler)
+
+logging = logging.getLogger(__name__)
+# logger = logging.getLogger()
+# logger.addHandler(loghandler)
 # logging.debug('This is a debug log')
 # logging.info('This is a debug info')
-# logging.warning('This is a warning log')
+
+logging.warning('This is a warning log')
 # logging.error('This is a error log',456)
 # logging.critical('This is a critical log')
 class zhihuishu():
@@ -116,10 +154,18 @@ class chao:
 
         with open(self.filename, mode='r',encoding="utf-8") as f:
             try:
+                f.seek(0, 0)
+
+
                 a = json.loads(f.read())
                 self.user_xinxi = a.get('uid','')
                 self.user_pass = a.get('passwd','')
-            except:
+                self.chaoxing_userid = a.get('chaoxing_uid','')
+                self.chaoxing_password = a.get('chaoxing_passwd', '')
+            except json.JSONDecodeError:
+                f.close()
+                logging.error("自动填充密码配置文件解析失败")
+
                 self.user_xinxi = ''
                 self.user_pass = ''
         #
@@ -204,7 +250,7 @@ class chao:
     def exitc(self):
         self.window.destroy()
         self.window.quit()
-        quit()
+
     def _jia(self,password='1'):
         if self.data_json:
             _t = int(time.time() * 1000)
@@ -344,7 +390,7 @@ class chao:
                 self.logo_button.config(state=tk.NORMAL)
             elif req == '200':
 
-                self.saveuserpass(self.mima,self.ruan_user)
+                self.saveuserpass(self.mima,self.ruan_user,0)
 
                 if response['status'] == 'activation':
 
@@ -371,6 +417,7 @@ class chao:
                 self.confirmLabel.config(text='你的网络时延太大，建议你跟换网络')
                 tk.messagebox.showinfo('提示', '你的网络时延太大，建议你跟换网络')
         except Exception as e:
+            logging.info(e)
             if str(e) == 'Extra':
                 self.confirmLabel.config(text='软件出现bug系客服')
                 self.logo_button.config(state=tk.NORMAL)
@@ -382,7 +429,8 @@ class chao:
             else:
                 
                 self.logo_button.config(state=tk.NORMAL)
-                self.confirmLabel.config(text='未知错误请联系客服')
+
+                self.confirmLabel.config(text='未知错误请联系客服'+e)
                 tk.messagebox.showinfo('提示', '未知错误请联系客服')  # 提示框
 
     # 多线程
@@ -393,11 +441,27 @@ class chao:
             t1.start()
 
     # 保存用户密码
-    def saveuserpass(self,user,password):
+    def saveuserpass(self,user,password,passtype,**keys):
         self.user_xinxi = user
         self.user_pass = password
-        with open(self.filename, 'w',encoding='utf-8') as f:
-            s = {'uid': user, 'passwd':password }
+        with open(self.filename, 'r+',encoding='utf-8') as f:
+            try:
+                f.seek(0, 0)
+                s = json.loads(f.read())
+            except json.JSONDecodeError:
+                logging.error("密码配置文件解析失败")
+
+                s = {}
+            if passtype == 0:
+                s['uid'] = user
+                s['passwd'] = password
+            elif passtype == 1:
+                # 先存一个，后面应该不止一个
+                s['chaoxing_uid'] = user
+                s['chaoxing_passwd'] = password
+                s['chaoxing_cookie'] = keys.get("chaoxingCookie",None)
+            f.truncate(0)  # 清空文件内容
+            f.seek(0, 0)   # 光标移动到开头
             f.write(json.dumps(s))
 
     # 登陆成功的页面
@@ -415,20 +479,30 @@ class chao:
             TabStrip1__Tab1 = Frame(self.TabStrip1)
             self.chaoxing_user = Label(TabStrip1__Tab1, text=user_text, )
             self.chaoxing_pass = Label(TabStrip1__Tab1, text=password_text, )
+
+            varThree = tkinter.IntVar(value=1)
+            cbutThree = tkinter.Checkbutton(TabStrip1__Tab1, text="记住密码", variable=varThree)
+            cbutThree.place( relx=0.5, rely=0.36, relwidth=0.2, relheight=0.05 ,width=50,height=40)
+
+            # sticky=tkinter.W
             if type_int == 0:
                 self.gonggao = Label(TabStrip1__Tab1, text='输入内容时建议切换为英文输入法,不然会出现乱码欧!', )
             elif type_int == 1:
                 self.gonggao = Label(TabStrip1__Tab1, text='智慧树功能并不完善，输入内容时建议切换为英文输入法,不然会出现乱码欧!', )
-            self.chaoxing_user.place(relx=0.1, rely=0.2, relwidth=0.2, relheight=0.05)
+            self.chaoxing_user.place(relx=0.1, rely=0.2, relwidth=0.2, relheight=0.05 )
             self.chaoxing_pass.place(relx=0.1, rely=0.3, relwidth=0.2, relheight=0.05)
             self.gonggao.place(relx=0.1, rely=0.03, relwidth=0.8, relheight=0.05)
             status = Label(TabStrip1__Tab1, text='状态', )
             status.place(relx=0.1, rely=0.1, relwidth=0.2, relheight=0.05)
             user__ = Entry(TabStrip1__Tab1, width=25, font=("Times", 10, "bold"))
+            user__.insert(0,self.chaoxing_userid)
             passwd_ = Entry(TabStrip1__Tab1, width=25, font=("Times", 10, "bold"))
+            passwd_.insert(0,self.chaoxing_password)
+
             user__.place(relx=0.35, rely=0.2, relwidth=0.3, relheight=0.05)  # 账号输入框
             passwd_.place(relx=0.35, rely=0.3, relwidth=0.3, relheight=0.05)  # 密码输入框
-            denglu_anniu = Button(TabStrip1__Tab1, text="登录",command=lambda: a(user__.get().strip(),passwd_.get().strip(),type_int,denglu_anniu,status,TabStrip1__Tab1))
+
+            denglu_anniu = Button(TabStrip1__Tab1, text="登录",command=lambda: a(user__.get().strip(),passwd_.get().strip(),type_int,denglu_anniu,status,TabStrip1__Tab1,issavepass=varThree.get()))
             denglu_anniu.place(relx=0.35, rely=0.4, relwidth=0.1, relheight=0.05)  # 登录按钮
             Button(TabStrip1__Tab1, text='关闭', command=lambda: TabStrip1__Tab1.destroy()).place(relx=0.65, rely=0.1, relwidth=0.1,relheight=0.05)
             self.TabStrip1.add(TabStrip1__Tab1, text=title_text)  # 标题
@@ -438,8 +512,10 @@ class chao:
         b('超星账号2', '超星密码', '超星、学习通、雅尔', 0)
         b('超星账号3', '超星密码', '超星、学习通、雅尔', 0)
         b('超星账号4', '超星密码', '超星、学习通、雅尔', 0)
-        def a(user,password,type_int,denglu_anniu,status,TabStrip1__Tab1):
-
+        def a(user,password,type_int,denglu_anniu,status,TabStrip1__Tab1,**keys):
+            # 保存密码
+            if keys['issavepass'] == 1:
+                self.saveuserpass(user,password,1)
             if len(user)>5 and len(password)>5:
                 denglu_anniu.config(text='正在登录中...',state=tk.DISABLED)
                 t1 = threading.Thread(target=self.chao,args=(user,password,type_int,denglu_anniu,status,TabStrip1__Tab1))
@@ -559,7 +635,7 @@ class chao:
                             resonse = requests.post(url, data,headers=data['headers'])
                             resp=resonse.json()
                             if resp['error'] == '200':
-                                self.saveuserpass(struser, password)
+                                self.saveuserpass(struser, password,0)
                                 self.autoinputuserpass()
                                 tk.messagebox.showinfo('提示', '注册成功',parent=self.windowregret)
                                 self.zhuce1.config(state = tk.DISABLED)
@@ -674,7 +750,7 @@ class chao:
         status.config(text='正在登录')
         bloginsuccess = False
         if type_int==0:
-            self.chao_ = chaoxing(_jia=self._jia,logging=logging)
+            self.chao_ = chaoxing(_jia=self._jia,logging=logging,msgbox=self.print_msgbox)
             bloginsuccess = self.chao_.login(user,password)
         elif type_int==1:
             # self.headers = self.zhihui_login(user,password)
@@ -789,15 +865,15 @@ class chao:
     def print_msgbox(self,msgstr):
 
 
-
+        logging.info(msgstr)
         if not self.sysTrayIcon.Isminmize:
 
-            logging.info("显示")
+            # logging.info("显示")
             self.listxiaox.append(msgstr)
             self.OnwinShow()
         else:
             self.listxiaox.append(msgstr)
-            logging.info("最小化到后台了隐藏")
+            # logging.info("最小化到后台了隐藏")
             return None
     def OnwinShow(self,lparam=None):
 
@@ -916,7 +992,7 @@ class chao:
                 def sddf( url, bofzhuangt_,kaoshi=False):
                     speed_ = int(speed)
 
-                    a = self.chao_.huoquzhangjie( url,self.print_msgbox)
+                    a = self.chao_.huoquzhangjie(url)
 
                     if a=="当前课程已经完成":
                         bofzhuangt_.config(text='当前课程播放完毕')
@@ -1024,6 +1100,7 @@ class chao:
 
                 self.exitc()# 关闭python
             time.sleep(60)
+
 if __name__=="__main__":
     try:
         Iswangluo = requests.get('https://www.baidu.com',timeout = 5).status_code==200

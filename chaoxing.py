@@ -54,7 +54,7 @@ class chaoxing():
         self.jia = kwargs["_jia"]()
         self.host_url = None
         self.logging = kwargs['logging']
-
+        self.msgbox = kwargs['msgbox']
         self._session = None
 
     def __int__(self):
@@ -170,17 +170,19 @@ class chaoxing():
                 url = re.sub('amp;', '',    i.a.get('href'))
                 kec[ii] = {i.next_sibling.next_sibling.h3.a.span.get("title"):url.strip()}
         return kec
-    def huoquzhangjie(self,ke_cheng_url,msgbox):
+    def huoquzhangjie(self,ke_cheng_url):
 
-        self.msgbox = msgbox
+
         self.ke_cheng_url = ke_cheng_url
         reg = 'courseid=(.*?)&'
         courseid = re.findall(reg, ke_cheng_url)[0]
         url = self._session.get(ke_cheng_url, allow_redirects=False).headers['Location']
         self.host_url = re.findall(r'://(.*?)/',ke_cheng_url)[0]
 
+        if not url:
+            self.logging.error("没有找到返回地址")
+            return
 
-        url if url else self.logging.error("没有找到返回地址")
 
         reg = 'clazzid=(.*?)&'
         clazzid = re.findall(reg, url)[0]
@@ -205,7 +207,7 @@ class chaoxing():
                     name = a_.a.text.strip()
                 else:
                     name = a_.findAll('a', {'class': 'clicktitle'})[0].text.strip()  # 视频的名称
-                msgbox("添加到准备列表中   " + name)  # 输入用户日志
+                self.msgbox("添加到准备列表中   " + name)  # 输入用户日志
                 str_usr = a_.parent.get('onclick')  # 进入播放页面的url
                 reg = "'(.*?)'"
                 idstr = re.findall(reg, str_usr)
@@ -363,7 +365,7 @@ class chaoxing():
         enc = hashlib.md5(zz.encode()).hexdigest()
         # print(str(kwargs.get('cpi')))
 
-        url = 'https://'+self.host_url+'/multimedia/log/a/' + dtoken
+        url = 'https://'+self.host_url+'/mooc-ans/multimedia/log/a/' + dtoken
 
         _t = int(time.time() * 1000)
         url_post = {
@@ -385,13 +387,20 @@ class chaoxing():
 
         }
 
-        try:
 
-            url = self._session.get(url, url_post)
-            return url.json()['isPassed']
-        except:
-            self.logging.error("提交参数有误")
-            return False
+
+        response = self._session.get(url, params=url_post)
+        self.logging.info(response.headers.get("content-type",None))
+        if response.status_code != 200:
+            self.logging.error("提交参数有误 已跳过该视频")
+            return True
+
+        try:
+            return response.json()['isPassed']
+        except Exception as e:
+
+            self.logging.error(e)
+            raise e
     def play_speed(self, speed,fe):
         '''
                 :param speed: 播放速度1-100
@@ -408,7 +417,7 @@ class chaoxing():
                         i1 = x
                         duration = i1["duration"]  # 视频总秒数
 
-                        videoendtime = int(duration - duration * (speed / 100))
+                        videoendtime = int(duration - duration * (speed / 100)) # 倍速后的总秒数
                         clazzid = i1['clazzid']  # 课程的ID
                         userid = i1['uid']  # 用户ID
                         jobid = i1['jobid']
@@ -418,28 +427,37 @@ class chaoxing():
                         otherInfo = i1['otherInfo']
                         name = i1['name']
                         ic = int(i1['headOffset']/1000)  # 当前视频播放的位置
-
-                        while ic < duration:
+                        _isPassed = False
+                        # while ic < duration:
+                        while not _isPassed:
                             bofang = ic
                             if videoendtime - bofang < 60:
+                                bofang = duration
                                 # time.sleep(abs(videoendtime - bofang))  # 等待
-                                while True:
-                                    if self.goo_post(duration, clazzid, userid, jobid, objectid, duration,
-                                                     dtoken,
-                                                     otherInfo, name,cpi=cpi):
-                                        break
-                                break
+                            #     while True:
+                            #
+                            #         if _isPassed:
+                            #             break
+                            #     break
+                            # else:
+                            #     if self.goo_post(bofang, clazzid, userid, jobid, objectid, duration, dtoken,
+                            #                      otherInfo, name,cpi=cpi):
+                            #         self.logging.info('播放完毕' + str(name))
+                            #
+                            #         break
+                            bofang = min(duration,bofang)
+                            _isPassed = self.goo_post(bofang, clazzid, userid, jobid, objectid, duration,
+                                                      dtoken,
+                                                      otherInfo, name, cpi=cpi)
+
+                            if not _isPassed:
+                                ic += 60
+                                time.sleep(60)  # 等待 60秒
                             else:
-                                if self.goo_post(bofang, clazzid, userid, jobid, objectid, duration, dtoken,
-                                                 otherInfo, name,cpi=cpi):
-                                    self.logging.info('播放完毕' + str(name))
-
-                                    break
-
-                            ic += 60
-                            time.sleep(60)  # 等待 65秒
+                                self.logging.info('播放完毕' + str(name))
                 else:
-                    self.logging.info('课程视频播放完毕')
+
+                    self.msgbox("课程视频播放完毕")
                 # 答题
                 if 'workid' in j:  # 答题
                     x = j['workid']
@@ -459,7 +477,8 @@ class chaoxing():
                     }
                     self.get_Answer(data_url,x['title'])
                 else:
-                    self.logging.info("课程题目已完成")
+                    self.msgbox("课程题目已完成")
+
     def get_Answer(self, data_url,title):
         '''获取题目
         '''
