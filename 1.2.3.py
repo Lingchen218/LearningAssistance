@@ -1104,8 +1104,10 @@ class chao:
 if __name__=="__main__":
     try:
         Iswangluo = requests.get('https://www.baidu.com',timeout = 5).status_code==200
-    except:
+    except Exception as e:
         Iswangluo = False
+        logging.error("网络异常")
+        logging.error(e)
 
 
     Main = chao(Iswangluo)
